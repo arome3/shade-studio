@@ -1,0 +1,8 @@
+# ZK Circuit artifacts directory
+# Circuit files will be added when ZK module is implemented:
+# - grant-eligibility.wasm
+# - grant-eligibility.zkey
+# - milestone-completion.wasm
+# - milestone-completion.zkey
+# - fund-usage.wasm
+# - fund-usage.zkey

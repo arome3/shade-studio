@@ -1,0 +1,7 @@
+# Zustand stores directory
+# Store files will be added in subsequent modules:
+# - useWalletStore.ts - NEAR wallet connection state
+# - useProjectStore.ts - Project management state
+# - useDocumentStore.ts - Document editing state
+# - useEncryptionStore.ts - Encryption key management
+# - useAIStore.ts - AI session management

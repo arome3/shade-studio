@@ -1,0 +1,5 @@
+# NEAR ZK Verifier Contract directory
+# Contract files will be added when blockchain module is implemented:
+# - Cargo.toml
+# - src/lib.rs
+# - src/verifier.rs
