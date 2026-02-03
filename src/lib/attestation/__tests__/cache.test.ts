@@ -239,8 +239,8 @@ describe('VerificationCache', () => {
       const entries = cache.entries();
 
       expect(entries.length).toBe(2);
-      expect(entries[0].entry.result).toBeDefined();
-      expect(entries[0].entry.createdAt).toBeDefined();
+      expect(entries[0]?.entry.result).toBeDefined();
+      expect(entries[0]?.entry.createdAt).toBeDefined();
     });
   });
 });

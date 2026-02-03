@@ -3,8 +3,66 @@
  * Handles personalized daily updates and grant opportunity tracking.
  */
 
+import type { NEARAIAttestation } from './ai';
+
 /** Priority level for briefing items */
-export type BriefingPriority = 'high' | 'medium' | 'low';
+export type BriefingPriority = 'critical' | 'high' | 'medium' | 'low';
+
+/** Item status for tracking completion */
+export type ItemStatus = 'pending' | 'in_progress' | 'completed' | 'deferred';
+
+/** Grant pipeline status */
+export type GrantPipelineStatus =
+  | 'researching'
+  | 'drafting'
+  | 'review'
+  | 'submitted'
+  | 'approved'
+  | 'rejected';
+
+/** Grant pipeline item for tracking application progress */
+export interface GrantPipelineItem {
+  /** Grant program name */
+  program: string;
+  /** Current status in the pipeline */
+  status: GrantPipelineStatus;
+  /** Application deadline */
+  deadline?: string;
+  /** Requested funding amount */
+  amount?: number;
+  /** Next action to take */
+  nextAction?: string;
+  /** Progress percentage (0-100) */
+  progress: number;
+}
+
+/** Strategic recommendation from AI analysis */
+export interface Recommendation {
+  /** Recommendation title */
+  title: string;
+  /** Detailed description */
+  description: string;
+  /** Expected impact level */
+  impact: 'high' | 'medium' | 'low';
+  /** Implementation effort required */
+  effort: 'high' | 'medium' | 'low';
+  /** Reasoning behind the recommendation */
+  rationale: string;
+}
+
+/** Briefing generation options */
+export interface BriefingOptions {
+  /** Include competitive analysis insights */
+  includeCompetitive?: boolean;
+  /** Maximum items per section */
+  maxItemsPerSection?: number;
+  /** Focus areas to prioritize */
+  focusAreas?: string[];
+  /** Progress callback for streaming */
+  onProgress?: (progress: number) => void;
+  /** Abort controller for cancellation */
+  abortController?: AbortController;
+}
 
 /** Type of briefing item */
 export type BriefingItemType =
@@ -44,6 +102,8 @@ export interface BriefingItem {
   isRead: boolean;
   /** Whether item has been dismissed */
   isDismissed: boolean;
+  /** Item completion status */
+  status?: ItemStatus;
   /** Timestamp */
   createdAt: string;
 }
@@ -66,6 +126,14 @@ export interface DailyBriefing {
   metrics: BriefingMetrics;
   /** Weather/market sentiment (optional fun addition) */
   sentiment?: 'bullish' | 'neutral' | 'bearish';
+  /** Grant pipeline overview */
+  grantPipeline?: GrantPipelineItem[];
+  /** Strategic recommendations */
+  recommendations?: Recommendation[];
+  /** Source document IDs used for generation */
+  sourceDocumentIds?: string[];
+  /** TEE attestation for privacy verification */
+  attestation?: NEARAIAttestation;
   /** Generation timestamp */
   generatedAt: string;
 }
