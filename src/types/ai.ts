@@ -349,3 +349,33 @@ export interface PromptSuggestion {
   /** Category for grouping */
   category?: 'writing' | 'analysis' | 'research' | 'general';
 }
+
+// ============================================================================
+// Re-exports from Enhanced Attestation Module
+// ============================================================================
+
+/**
+ * For comprehensive attestation verification with caching and detailed feedback,
+ * use the enhanced attestation module:
+ *
+ * @example
+ * ```typescript
+ * import { verifyAttestation, TEEInfo, VerificationResult } from '@/lib/attestation';
+ * import { useAttestationEnhanced } from '@/hooks/use-attestation-enhanced';
+ * import { AttestationDetails, TEEExplainer } from '@/components/features/attestation';
+ * ```
+ *
+ * The enhanced module provides:
+ * - Multi-step verification with progress tracking
+ * - In-memory caching with TTL
+ * - Detailed verification steps
+ * - Educational TEE explainer components
+ */
+export type {
+  TEEType,
+  TEEInfo,
+  TEEAttestation as ExtendedTEEAttestation,
+  VerificationResult,
+  VerificationStep,
+  VerificationOptions,
+} from './attestation';

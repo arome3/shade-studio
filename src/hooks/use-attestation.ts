@@ -16,6 +16,9 @@ import type {
 
 /**
  * Return type for the useAttestation hook.
+ *
+ * @deprecated Use `UseAttestationEnhancedReturn` from `use-attestation-enhanced` for
+ * comprehensive verification with caching, step tracking, and async support.
  */
 export interface UseAttestationReturn {
   // State
@@ -42,6 +45,9 @@ export interface UseAttestationReturn {
  *
  * Provides utilities for verifying, formatting, and displaying
  * TEE attestation information from NEAR AI Cloud responses.
+ *
+ * @deprecated Consider using `useAttestationEnhanced` from `@/hooks/use-attestation-enhanced`
+ * for comprehensive verification with caching, step-by-step progress tracking, and async support.
  *
  * @example
  * function AttestationBadge({ attestation }) {
