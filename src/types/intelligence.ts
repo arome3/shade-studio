@@ -278,3 +278,79 @@ export interface TrackedDeadline {
   /** Creation timestamp */
   createdAt: string;
 }
+
+// ============================================================================
+// Competitive Tracker Types
+// ============================================================================
+
+/** Threat level for competitor assessment (1 = low, 5 = critical) */
+export type ThreatLevel = 1 | 2 | 3 | 4 | 5;
+
+/** Competitive entry event type */
+export type CompetitiveEntryType = 'funding' | 'launch' | 'partnership' | 'news' | 'grant';
+
+/** Tracked competitor */
+export interface Competitor {
+  /** Unique identifier */
+  id: string;
+  /** Competitor name */
+  name: string;
+  /** Brief description */
+  description: string;
+  /** Website URL */
+  website?: string;
+  /** Twitter/X handle */
+  twitter?: string;
+  /** GitHub organization or repo */
+  github?: string;
+  /** Category tags */
+  categories: string[];
+  /** Threat level assessment (1-5) */
+  threatLevel: ThreatLevel;
+  /** Additional notes */
+  notes?: string;
+  /** Timestamp when competitor was added */
+  addedAt: number;
+}
+
+/** Competitive intelligence entry */
+export interface CompetitiveEntry {
+  /** Unique identifier */
+  id: string;
+  /** Associated competitor ID */
+  competitorId: string;
+  /** Entry type */
+  type: CompetitiveEntryType;
+  /** Entry title */
+  title: string;
+  /** Detailed description */
+  description: string;
+  /** Source URL for the information */
+  sourceUrl?: string;
+  /** Date of the event (ISO 8601) */
+  date: string;
+  /** Relevance score (0-100) */
+  relevance: number;
+  /** Funding amount in USD (meaningful for funding-type entries) */
+  amount?: number;
+  /** AI-generated strategic insight */
+  insight?: string;
+  /** Whether this was manually added */
+  isManual: boolean;
+  /** Creation timestamp */
+  createdAt: number;
+}
+
+/** Summary of competitive landscape */
+export interface CompetitiveSummary {
+  /** Total number of tracked competitors */
+  totalCompetitors: number;
+  /** Number of entries in the recent window */
+  recentEntries: number;
+  /** Total funding amount tracked across entries */
+  totalFundingTracked: number;
+  /** AI-extracted trend descriptions */
+  trends: string[];
+  /** When this summary was generated */
+  generatedAt: number;
+}
