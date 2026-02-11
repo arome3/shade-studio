@@ -31,3 +31,18 @@ export {
   type BriefingProjectContext,
   type BriefingDeadlineContext,
 } from './prompts';
+
+// Decision Journal
+export {
+  analyzeDecision,
+  filterDecisions,
+  exportDecisionsToMarkdown,
+  getCategoryBadgeVariant,
+  getStatusBadgeVariant,
+  getOutcomeBadgeVariant,
+  getOutcomeColor,
+  getOutcomeBgColor,
+  getCategoryLabel,
+  getOutcomeLabel,
+  getStatusLabel,
+} from './decisions';

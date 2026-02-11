@@ -354,3 +354,103 @@ export interface CompetitiveSummary {
   /** When this summary was generated */
   generatedAt: number;
 }
+
+// ============================================================================
+// Decision Journal Types
+// ============================================================================
+
+/** Category of a strategic decision */
+export type DecisionCategory =
+  | 'strategic'
+  | 'technical'
+  | 'financial'
+  | 'team'
+  | 'partnership'
+  | 'product'
+  | 'marketing';
+
+/** Status of a decision in its lifecycle */
+export type DecisionStatus =
+  | 'proposed'
+  | 'approved'
+  | 'implemented'
+  | 'revisited'
+  | 'reversed';
+
+/** Outcome assessment of a decision */
+export type DecisionOutcome =
+  | 'pending'
+  | 'successful'
+  | 'partially_successful'
+  | 'unsuccessful'
+  | 'inconclusive';
+
+/** An alternative that was considered but not chosen */
+export interface DecisionAlternative {
+  /** Alternative title */
+  title: string;
+  /** Description of the alternative */
+  description: string;
+  /** Advantages of this alternative */
+  pros: string[];
+  /** Disadvantages of this alternative */
+  cons: string[];
+  /** Reason this alternative was not chosen */
+  whyNotChosen?: string;
+}
+
+/** A strategic decision record */
+export interface Decision {
+  /** Unique identifier */
+  id: string;
+  /** Decision title */
+  title: string;
+  /** Detailed description of the decision */
+  description: string;
+  /** Decision category */
+  category: DecisionCategory;
+  /** Current status */
+  status: DecisionStatus;
+  /** Outcome assessment */
+  outcome: DecisionOutcome;
+  /** Context — what prompted this decision */
+  context: string;
+  /** Rationale — why this option was chosen */
+  rationale: string;
+  /** Alternatives that were considered */
+  alternatives: DecisionAlternative[];
+  /** Expected impact of the decision */
+  expectedImpact: string;
+  /** Actual impact observed (filled in after outcome is assessed) */
+  actualImpact?: string;
+  /** People involved in making this decision */
+  decisionMakers: string[];
+  /** Related document or resource references */
+  relatedDocuments: string[];
+  /** Tags for categorization and search */
+  tags: string[];
+  /** Date the decision was made (ISO 8601) */
+  decisionDate: string;
+  /** Date scheduled for review (ISO 8601) */
+  reviewDate?: string;
+  /** Creation timestamp */
+  createdAt: number;
+  /** Last update timestamp */
+  updatedAt: number;
+  /** AI-generated strategic analysis */
+  aiAnalysis?: string;
+}
+
+/** Filter criteria for decisions */
+export interface DecisionFilter {
+  /** Filter by category */
+  category?: DecisionCategory;
+  /** Filter by status */
+  status?: DecisionStatus;
+  /** Filter by outcome */
+  outcome?: DecisionOutcome;
+  /** Filter by date range */
+  dateRange?: { start: string; end: string };
+  /** Full-text search query */
+  searchQuery?: string;
+}

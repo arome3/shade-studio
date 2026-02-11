@@ -14,3 +14,7 @@ export {
 export { PriorityItems, type PriorityItemsProps } from './priority-items';
 export { DeadlineTracker, type DeadlineTrackerProps } from './deadline-tracker';
 export { BriefingHistory, type BriefingHistoryProps } from './briefing-history';
+export { DecisionJournal, type DecisionJournalProps } from './decision-journal';
+export { DecisionEntry, type DecisionEntryProps } from './decision-entry';
+export { DecisionForm, type DecisionFormProps } from './decision-form';
+export { DecisionTimeline, type DecisionTimelineProps } from './decision-timeline';
