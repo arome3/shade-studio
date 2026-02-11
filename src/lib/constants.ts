@@ -36,10 +36,30 @@ export const KEY_LENGTH = 32;
 
 // ZK Proofs
 export const ZK_CIRCUIT_NAMES = [
-  'grant-eligibility',
-  'milestone-completion',
-  'fund-usage',
+  'verified-builder',
+  'grant-track-record',
+  'team-attestation',
 ] as const;
+
+/** Circuit-specific parameters used for input validation and array sizing */
+export const ZK_CIRCUIT_PARAMS = {
+  'verified-builder': {
+    maxDays: 365,
+    merkleDepth: 20,
+  },
+  'grant-track-record': {
+    maxGrants: 10,
+    grantMerkleDepth: 15,
+    programMerkleDepth: 10,
+  },
+  'team-attestation': {
+    maxAttestations: 5,
+    merkleDepth: 20,
+  },
+} as const;
+
+/** Base path for compiled circuit artifacts served from public/ */
+export const ZK_ARTIFACTS_BASE_PATH = '/circuits' as const;
 
 // Storage keys
 export const STORAGE_KEYS = {

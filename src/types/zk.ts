@@ -1,15 +1,18 @@
 /**
  * Zero-knowledge proof types for Private Grant Studio.
  * Handles ZK credential generation and verification for privacy-preserving attestations.
+ *
+ * Circuits:
+ * - verified-builder: Prove activity history without revealing specific actions
+ * - grant-track-record: Prove grant history without revealing amounts/details
+ * - team-attestation: Prove team endorsements without revealing attesters
  */
 
-/** ZK circuit identifiers */
+/** ZK circuit identifiers — matches compiled Circom circuit names */
 export type ZKCircuit =
-  | 'grant-eligibility'
-  | 'milestone-completion'
-  | 'fund-usage'
-  | 'team-verification'
-  | 'credential-ownership';
+  | 'verified-builder'
+  | 'grant-track-record'
+  | 'team-attestation';
 
 /** ZK proof status */
 export type ProofStatus =
@@ -97,46 +100,93 @@ export interface ZKCredential {
   createdAt: string;
 }
 
-/** Grant eligibility proof inputs */
-export interface GrantEligibilityInputs {
-  /** Public: Minimum funding threshold met (boolean as 0/1) */
-  meetsMinimum: number;
-  /** Public: Grant program identifier hash */
-  programHash: string;
-  /** Private: Actual requested amount */
-  requestedAmount: number;
-  /** Private: Team size */
-  teamSize: number;
-  /** Private: Project category */
-  category: string;
+/** Verified builder circuit inputs — proves activity history */
+export interface VerifiedBuilderInputs {
+  /** Public: Merkle root of the activity tree */
+  activityRoot: string;
+  /** Public: Minimum active days required */
+  minDays: number;
+  /** Public: Current timestamp for range validation */
+  currentTimestamp: number;
+  /** Private: Activity date hashes (Poseidon-hashed timestamps) */
+  activityDates: string[];
+  /** Private: Merkle proof siblings for each activity */
+  activityProofSiblings: string[][];
+  /** Private: Merkle proof path indices */
+  activityProofPathIndices: number[][];
 }
 
-/** Milestone completion proof inputs */
-export interface MilestoneCompletionInputs {
-  /** Public: Milestone identifier hash */
-  milestoneHash: string;
-  /** Public: Completion claimed (boolean as 0/1) */
-  isComplete: number;
-  /** Private: Deliverables hashes */
-  deliverableHashes: string[];
-  /** Private: Evidence hashes */
-  evidenceHashes: string[];
-  /** Private: Completion date timestamp */
-  completionTimestamp: number;
+/** Grant track record circuit inputs — proves grant history */
+export interface GrantTrackRecordInputs {
+  /** Public: Merkle root of the grant tree */
+  grantRoot: string;
+  /** Public: Minimum number of grants completed */
+  minGrants: number;
+  /** Public: Merkle root of the programs tree */
+  programsRoot: string;
+  /** Private: Grant ID hashes */
+  grantIds: string[];
+  /** Private: Grant completion status flags (0 or 1) */
+  grantCompletionFlags: number[];
+  /** Private: Merkle proof siblings for grant tree */
+  grantProofSiblings: string[][];
+  /** Private: Merkle proof path indices for grant tree */
+  grantProofPathIndices: number[][];
+  /** Private: Program ID hashes for each grant */
+  programIds: string[];
+  /** Private: Merkle proof siblings for program tree */
+  programProofSiblings: string[][];
+  /** Private: Merkle proof path indices for program tree */
+  programProofPathIndices: number[][];
 }
 
-/** Fund usage proof inputs */
-export interface FundUsageInputs {
-  /** Public: Total funds received */
-  totalReceived: string;
-  /** Public: Percentage used within budget (0-100) */
-  percentageUsed: number;
-  /** Private: Individual expense amounts */
-  expenses: number[];
-  /** Private: Expense category hashes */
-  categoryHashes: string[];
-  /** Private: Remaining balance */
-  remainingBalance: number;
+/** Team attestation circuit inputs — proves team endorsements */
+export interface TeamAttestationInputs {
+  /** Public: Merkle root of the attesters tree */
+  attestersRoot: string;
+  /** Public: Minimum number of attestations required */
+  minAttestations: number;
+  /** Public: Credential type being attested */
+  credentialType: number;
+  /** Private: Attester public keys (EdDSA) */
+  attesterPubKeys: string[][];
+  /** Private: Attestation signatures (EdDSA Poseidon) */
+  attestationSignatures: string[][];
+  /** Private: Attestation message hashes */
+  attestationMessages: string[];
+  /** Private: Merkle proof siblings for attesters tree */
+  attesterProofSiblings: string[][];
+  /** Private: Merkle proof path indices for attesters tree */
+  attesterProofPathIndices: number[][];
+}
+
+/** Maps circuit names to their typed inputs */
+export interface CircuitInputsMap {
+  'verified-builder': VerifiedBuilderInputs;
+  'grant-track-record': GrantTrackRecordInputs;
+  'team-attestation': TeamAttestationInputs;
+}
+
+/** Circuit configuration metadata */
+export interface CircuitConfig {
+  /** Circuit identifier */
+  id: ZKCircuit;
+  /** Human-readable display name */
+  name: string;
+  /** Description of what the circuit proves */
+  description: string;
+  /** Circuit version */
+  version: string;
+  /** Circuit-specific parameters (max array sizes, Merkle depths, etc.) */
+  params: Record<string, number>;
+  /** Estimated constraint count */
+  estimatedConstraints: number;
+  /** Path to WASM artifact (relative to public/) */
+  wasmPath: string;
+  /** Path to zkey artifact (relative to public/) */
+  zkeyPath: string;
+  /** Path to verification key JSON */
+  vkeyPath: string;
 }
 
 /** Proof generation request */

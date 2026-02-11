@@ -1,0 +1,85 @@
+/**
+ * ZK Error Types
+ *
+ * Typed error hierarchy for zero-knowledge proof operations.
+ * All ZK errors extend ZKError for unified catch handling.
+ */
+
+/** Base error for all ZK operations */
+export class ZKError extends Error {
+  readonly code: string;
+  readonly details?: Record<string, unknown>;
+
+  constructor(message: string, code: string, details?: Record<string, unknown>) {
+    super(message);
+    this.name = 'ZKError';
+    this.code = code;
+    this.details = details;
+  }
+}
+
+/** Circuit definition or configuration not found */
+export class CircuitNotFoundError extends ZKError {
+  constructor(circuitId: string) {
+    super(
+      `Circuit not found: ${circuitId}`,
+      'CIRCUIT_NOT_FOUND',
+      { circuitId }
+    );
+    this.name = 'CircuitNotFoundError';
+  }
+}
+
+/** Failed to load circuit artifacts (WASM, zkey, vkey) */
+export class ArtifactLoadError extends ZKError {
+  constructor(circuitId: string, artifactType: string, cause?: string) {
+    super(
+      `Failed to load ${artifactType} for circuit ${circuitId}${cause ? `: ${cause}` : ''}`,
+      'ARTIFACT_LOAD_ERROR',
+      { circuitId, artifactType, cause }
+    );
+    this.name = 'ArtifactLoadError';
+  }
+}
+
+/** Circuit input validation failed */
+export class InputValidationError extends ZKError {
+  readonly validationErrors: Array<{ path: string; message: string }>;
+
+  constructor(
+    circuitId: string,
+    validationErrors: Array<{ path: string; message: string }>
+  ) {
+    super(
+      `Invalid inputs for circuit ${circuitId}: ${validationErrors.map((e) => e.message).join('; ')}`,
+      'INPUT_VALIDATION_ERROR',
+      { circuitId, validationErrors }
+    );
+    this.name = 'InputValidationError';
+    this.validationErrors = validationErrors;
+  }
+}
+
+/** Proof generation failed */
+export class ProofGenerationError extends ZKError {
+  constructor(circuitId: string, cause?: string) {
+    super(
+      `Proof generation failed for circuit ${circuitId}${cause ? `: ${cause}` : ''}`,
+      'PROOF_GENERATION_ERROR',
+      { circuitId, cause }
+    );
+    this.name = 'ProofGenerationError';
+  }
+}
+
+/** Proof verification failed */
+export class ProofVerificationError extends ZKError {
+  constructor(circuitId: string, cause?: string) {
+    super(
+      `Proof verification failed for circuit ${circuitId}${cause ? `: ${cause}` : ''}`,
+      'PROOF_VERIFICATION_ERROR',
+      { circuitId, cause }
+    );
+    this.name = 'ProofVerificationError';
+  }
+}
