@@ -454,3 +454,104 @@ export interface DecisionFilter {
   /** Full-text search query */
   searchQuery?: string;
 }
+
+// ============================================================================
+// Meeting Notes Pipeline Types
+// ============================================================================
+
+/** Type of meeting */
+export type MeetingType =
+  | 'team'
+  | 'funder'
+  | 'partner'
+  | 'advisor'
+  | 'community'
+  | 'other';
+
+/** Priority for action items extracted from meetings */
+export type ActionItemPriority = 'high' | 'medium' | 'low';
+
+/** Status of an action item */
+export type ActionItemStatus = 'pending' | 'in_progress' | 'completed';
+
+/** An action item extracted from meeting notes */
+export interface ActionItem {
+  /** Unique identifier */
+  id: string;
+  /** Description of the action */
+  description: string;
+  /** Person responsible */
+  assignee?: string;
+  /** Due date (ISO 8601) */
+  dueDate?: string;
+  /** Priority level */
+  priority: ActionItemPriority;
+  /** Current status */
+  status: ActionItemStatus;
+  /** Timestamp when completed */
+  completedAt?: number;
+}
+
+/** A meeting record */
+export interface Meeting {
+  /** Unique identifier */
+  id: string;
+  /** Meeting title */
+  title: string;
+  /** Meeting type */
+  type: MeetingType;
+  /** Meeting date (ISO 8601 date string) */
+  date: string;
+  /** Duration in minutes */
+  duration?: number;
+  /** List of attendees */
+  attendees: string[];
+  /** Raw meeting notes text */
+  rawNotes: string;
+  /** AI-generated summary */
+  summary?: string;
+  /** Extracted action items */
+  actionItems: ActionItem[];
+  /** Key decisions made during the meeting */
+  decisions: string[];
+  /** Whether follow-up is needed */
+  followUpNeeded: boolean;
+  /** Suggested follow-up date (ISO 8601) */
+  followUpDate?: string;
+  /** Related project identifier */
+  relatedProject?: string;
+  /** Tags for categorization */
+  tags: string[];
+  /** Creation timestamp */
+  createdAt: number;
+  /** Last update timestamp */
+  updatedAt: number;
+  /** Whether AI processing has been completed */
+  isProcessed: boolean;
+}
+
+/** Result of AI processing of meeting notes */
+export interface MeetingProcessingResult {
+  /** AI-generated meeting summary */
+  summary: string;
+  /** Extracted action items (without runtime fields) */
+  actionItems: Omit<ActionItem, 'id' | 'status' | 'completedAt'>[];
+  /** Key decisions identified */
+  decisions: string[];
+  /** Whether follow-up is recommended */
+  followUpNeeded: boolean;
+  /** Suggested follow-up date (ISO 8601) */
+  suggestedFollowUpDate?: string;
+}
+
+/** Filter criteria for meetings */
+export interface MeetingFilter {
+  /** Filter by meeting type */
+  type?: MeetingType;
+  /** Filter by processing status */
+  status?: 'all' | 'processed' | 'unprocessed';
+  /** Full-text search query */
+  searchQuery?: string;
+  /** Filter by date range */
+  dateRange?: { start: string; end: string };
+}

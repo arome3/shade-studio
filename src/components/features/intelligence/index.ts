@@ -18,3 +18,7 @@ export { DecisionJournal, type DecisionJournalProps } from './decision-journal';
 export { DecisionEntry, type DecisionEntryProps } from './decision-entry';
 export { DecisionForm, type DecisionFormProps } from './decision-form';
 export { DecisionTimeline, type DecisionTimelineProps } from './decision-timeline';
+export { MeetingNotes, type MeetingNotesProps } from './meeting-notes';
+export { MeetingEntry, type MeetingEntryProps } from './meeting-entry';
+export { MeetingForm, type MeetingFormProps } from './meeting-form';
+export { ActionItemList, type ActionItemListProps } from './action-item-list';

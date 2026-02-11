@@ -46,3 +46,18 @@ export {
   getOutcomeLabel,
   getStatusLabel,
 } from './decisions';
+
+// Meeting Notes Pipeline
+export {
+  processMeetingNotes,
+  filterMeetings,
+  calculateMeetingStats,
+  exportMeetingsToMarkdown,
+  getMeetingTypeBadgeVariant,
+  getMeetingTypeLabel,
+  getActionPriorityBadgeVariant,
+  getActionPriorityLabel,
+  getActionStatusBadgeVariant,
+  getActionStatusLabel,
+  type MeetingStats,
+} from './meetings';
