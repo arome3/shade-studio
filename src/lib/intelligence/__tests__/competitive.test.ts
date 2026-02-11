@@ -105,6 +105,21 @@ describe('withRetry', () => {
     await expect(withRetry(fn, 3, 1)).rejects.toThrow('Aborted');
     expect(fn).toHaveBeenCalledTimes(1);
   });
+
+  it('should throw immediately with an already-aborted signal', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const fn = vi.fn().mockResolvedValue('should not run');
+
+    await expect(withRetry(fn, 3, 1, controller.signal)).rejects.toThrow('Aborted');
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('should accept optional signal parameter without breaking existing calls', async () => {
+    const fn = vi.fn().mockResolvedValue('ok');
+    const result = await withRetry(fn, 3, 1, undefined);
+    expect(result).toBe('ok');
+  });
 });
 
 describe('analyzeCompetitiveEntry', () => {

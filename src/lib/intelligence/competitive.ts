@@ -59,10 +59,15 @@ function parseJsonFromAI<T>(content: string): T {
 export async function withRetry<T>(
   fn: () => Promise<T>,
   maxRetries = 3,
-  delayMs = 1000
+  delayMs = 1000,
+  signal?: AbortSignal
 ): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
+    // Check signal before each attempt
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
     try {
       return await fn();
     } catch (err) {

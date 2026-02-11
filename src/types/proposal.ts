@@ -224,3 +224,81 @@ export interface GrantProgramInfo {
   /** Whether program is currently active */
   isActive: boolean;
 }
+
+// ============================================================================
+// Workflow Types (Module 13: Proposal Workflow)
+// ============================================================================
+
+/** Supported grant programs for template-driven workflows */
+export type GrantProgram = 'potlock' | 'gitcoin' | 'optimism_rpgf' | 'arbitrum' | 'custom';
+
+/** Section within a proposal workflow */
+export interface ProposalSection {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  required: boolean;
+  wordLimit?: number;
+  wordCount: number;
+  isComplete: boolean;
+  lastEditedAt?: number;
+  aiSuggestions?: string[];
+  /** Maps this section to a ProposalContent field for bidirectional sync */
+  contentFieldKey?: keyof ProposalContent;
+}
+
+/** Snapshot of proposal sections at a point in time */
+export interface ProposalVersion {
+  version: number;
+  timestamp: number;
+  changeSummary: string;
+  sections: Omit<ProposalSection, 'aiSuggestions'>[];
+}
+
+/** Template definition for a grant program */
+export interface ProposalTemplate {
+  id: string;
+  grantProgram: GrantProgram;
+  name: string;
+  description: string;
+  sections: Omit<ProposalSection, 'content' | 'wordCount' | 'isComplete' | 'lastEditedAt'>[];
+  amountRange?: { min: number; max: number };
+  applicationUrl?: string;
+}
+
+/** Result of completeness validation */
+export interface CompletenessResult {
+  isComplete: boolean;
+  percentage: number;
+  missingItems: string[];
+  warnings: string[];
+  sectionStatuses: {
+    sectionId: string;
+    title: string;
+    isComplete: boolean;
+    issues: string[];
+  }[];
+}
+
+/** Full proposal workflow wrapping a Proposal with section-based editing */
+export interface ProposalWorkflow {
+  proposal: Proposal;
+  sections: ProposalSection[];
+  templateId: string;
+  grantProgram: GrantProgram;
+  version: number;
+  versionHistory: ProposalVersion[];
+  activeSectionId: string | null;
+  showAIPanel: boolean;
+  sectionCids: Record<string, { cid: string; nonce: string }>;
+  /** Content for sections without a contentFieldKey (e.g. team, budget free-text) */
+  unmappedSectionContent: Record<string, string>;
+}
+
+/** Filter criteria for proposal list */
+export interface ProposalFilter {
+  status?: ProposalStatus;
+  grantProgram?: GrantProgram;
+  searchQuery?: string;
+}
