@@ -61,3 +61,20 @@ export {
   getActionStatusLabel,
   type MeetingStats,
 } from './meetings';
+
+// Weekly Synthesis
+export {
+  getWeekBounds,
+  gatherWeeklyData,
+  generateWeeklySynthesis,
+  exportSynthesisToMarkdown,
+  validateSynthesisImport,
+  getTrendDirectionBadgeVariant,
+  getRecommendationPriorityColor,
+  getRecommendationPriorityBadgeVariant,
+  getSynthesisStatusBadgeVariant,
+  getEffortBadgeVariant,
+  type WeekBounds,
+  type WeeklyDataContext,
+  type ImportValidationResult,
+} from './synthesis';

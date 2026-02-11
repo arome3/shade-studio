@@ -555,3 +555,109 @@ export interface MeetingFilter {
   /** Filter by date range */
   dateRange?: { start: string; end: string };
 }
+
+// ============================================================================
+// Weekly Synthesis Types
+// ============================================================================
+
+/** Status of a weekly synthesis generation */
+export type SynthesisStatus = 'generating' | 'completed' | 'failed';
+
+/** Direction of a weekly trend */
+export type TrendDirection = 'positive' | 'negative' | 'neutral';
+
+/** A trend identified across the week's data */
+export interface WeeklyTrend {
+  /** Trend title */
+  title: string;
+  /** Detailed description */
+  description: string;
+  /** Category (e.g., "funding", "technical", "competitive") */
+  category: string;
+  /** Whether the trend is positive, negative, or neutral */
+  direction: TrendDirection;
+  /** AI confidence in this trend (0-100) */
+  confidence: number;
+}
+
+/** Grant progress tracked across the week */
+export interface WeeklyGrantProgress {
+  /** Grant program name */
+  program: string;
+  /** Status at start of week */
+  previousStatus: GrantPipelineStatus;
+  /** Status at end of week */
+  currentStatus: GrantPipelineStatus;
+  /** Milestones achieved this week */
+  milestones: string[];
+  /** Current blockers */
+  blockers: string[];
+  /** Progress change delta (-100 to 100) */
+  progressDelta: number;
+}
+
+/** A strategic recommendation for next week */
+export interface WeeklyRecommendation {
+  /** Recommendation title */
+  title: string;
+  /** Detailed description */
+  description: string;
+  /** Priority level */
+  priority: BriefingPriority;
+  /** Category (e.g., "grants", "technical", "team") */
+  category: string;
+  /** Estimated effort level */
+  effort: 'high' | 'medium' | 'low';
+}
+
+/** Aggregate stats for the week */
+export interface WeeklySummaryStats {
+  /** Number of daily briefings generated */
+  briefingsGenerated: number;
+  /** Number of meetings held */
+  meetingsHeld: number;
+  /** Number of decisions made */
+  decisionsMade: number;
+  /** Number of competitive entries tracked */
+  competitiveEntries: number;
+  /** Action items completed */
+  actionItemsCompleted: number;
+  /** Action items created */
+  actionItemsCreated: number;
+  /** Total funding tracked in competitive entries */
+  totalFundingTracked: number;
+}
+
+/** A weekly synthesis report */
+export interface WeeklySynthesis {
+  /** Unique identifier */
+  id: string;
+  /** Week start date (Monday, YYYY-MM-DD) */
+  weekStart: string;
+  /** Week end date (Sunday, YYYY-MM-DD) */
+  weekEnd: string;
+  /** Executive summary paragraph */
+  executiveSummary: string;
+  /** Longer strategic analysis */
+  strategicAnalysis: string;
+  /** Aggregate stats for the week */
+  stats: WeeklySummaryStats;
+  /** Identified trends */
+  trends: WeeklyTrend[];
+  /** Grant progress tracking */
+  grantProgress: WeeklyGrantProgress[];
+  /** Recommendations for next week */
+  recommendations: WeeklyRecommendation[];
+  /** Key highlights from the week */
+  highlights: string[];
+  /** Risks and concerns identified */
+  risks: string[];
+  /** Generation status */
+  status: SynthesisStatus;
+  /** Error message if generation failed */
+  errorMessage?: string;
+  /** TEE attestation for privacy verification */
+  attestation?: NEARAIAttestation;
+  /** When the synthesis was generated */
+  generatedAt: string;
+}

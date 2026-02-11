@@ -22,3 +22,5 @@ export { MeetingNotes, type MeetingNotesProps } from './meeting-notes';
 export { MeetingEntry, type MeetingEntryProps } from './meeting-entry';
 export { MeetingForm, type MeetingFormProps } from './meeting-form';
 export { ActionItemList, type ActionItemListProps } from './action-item-list';
+export { WeeklySynthesis, type WeeklySynthesisProps } from './weekly-synthesis';
+export { WeekSelector, type WeekSelectorProps } from './week-selector';

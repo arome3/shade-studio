@@ -361,6 +361,12 @@ export const useBriefingError = () =>
   useIntelligenceStore((state) => state.error);
 
 /**
+ * Get the briefing history record (stable reference for derived state).
+ */
+export const useBriefingHistoryRecord = () =>
+  useIntelligenceStore((state) => state.briefingHistory);
+
+/**
  * Get all briefing history as an array sorted by date (newest first).
  */
 export const useBriefingHistory = () =>
