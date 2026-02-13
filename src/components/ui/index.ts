@@ -13,3 +13,4 @@ export {
   CardContent,
 } from './card';
 export { Input, type InputProps } from './input';
+export { Switch } from './switch';
