@@ -101,4 +101,54 @@ describe('credential-store', () => {
     expect(state.credentialOrder).toEqual([]);
     expect(state.error).toBeNull();
   });
+
+  // Gap 6 regression: setCredentials must set isFetching: false
+  it('setCredentials sets isFetching to false (Gap 6 regression)', () => {
+    useCredentialStore.getState().setFetching(true);
+    expect(useCredentialStore.getState().isFetching).toBe(true);
+
+    useCredentialStore.getState().setCredentials([]);
+    expect(useCredentialStore.getState().isFetching).toBe(false);
+  });
+
+  it('setCredentials sets isFetching to false even with credentials', () => {
+    useCredentialStore.getState().setFetching(true);
+    useCredentialStore.getState().setCredentials([makeCred('c1')]);
+    expect(useCredentialStore.getState().isFetching).toBe(false);
+  });
+
+  // State transition: full fetch lifecycle
+  it('follows fetch lifecycle: false → true (setFetching) → false (setCredentials)', () => {
+    expect(useCredentialStore.getState().isFetching).toBe(false);
+
+    useCredentialStore.getState().setFetching(true);
+    expect(useCredentialStore.getState().isFetching).toBe(true);
+
+    useCredentialStore.getState().setCredentials([]);
+    expect(useCredentialStore.getState().isFetching).toBe(false);
+  });
+
+  it('follows error lifecycle: false → true (setFetching) → false (setError)', () => {
+    useCredentialStore.getState().setFetching(true);
+    expect(useCredentialStore.getState().isFetching).toBe(true);
+
+    useCredentialStore.getState().setError('Network error');
+    expect(useCredentialStore.getState().isFetching).toBe(false);
+    expect(useCredentialStore.getState().error).toBe('Network error');
+  });
+
+  it('setFetching(false) does not clear error', () => {
+    useCredentialStore.getState().setError('persistent error');
+    useCredentialStore.getState().setFetching(false);
+    expect(useCredentialStore.getState().error).toBe('persistent error');
+  });
+
+  it('removeCredential handles non-existent id gracefully', () => {
+    useCredentialStore.getState().setCredentials([makeCred('cred-1')]);
+    useCredentialStore.getState().removeCredential('non-existent');
+
+    const state = useCredentialStore.getState();
+    expect(state.credentialOrder).toEqual(['cred-1']);
+    expect(Object.keys(state.credentials)).toEqual(['cred-1']);
+  });
 });

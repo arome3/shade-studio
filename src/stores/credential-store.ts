@@ -71,6 +71,7 @@ export const useCredentialStore = create<CredentialState & CredentialActions>()(
                 credentials: record,
                 credentialOrder: order,
                 lastFetchedAt: Date.now(),
+                isFetching: false,
               };
             },
             false,
