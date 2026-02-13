@@ -17,6 +17,10 @@ export {
   ProofVerificationError,
   OnChainVerificationError,
   ProofConcurrencyError,
+  ContractCallError,
+  CredentialNotFoundError,
+  InsufficientDepositError,
+  ContractPausedError,
 } from './errors';
 
 // Circuit registry
@@ -94,6 +98,24 @@ export type { WorkerFullProveOptions } from './worker-bridge';
 // On-chain verification
 export { verifyProofOnChain } from './on-chain-verifier';
 export type { OnChainVerifyOptions } from './on-chain-verifier';
+
+// Contract client
+export {
+  getContractConfig,
+  getContractStats,
+  getCredentialStorageCost,
+  getOnChainCredential,
+  isOnChainCredentialValid,
+  isCredentialRevoked,
+  getCredentialsByOwner,
+  verifyProofViewOnContract,
+  hasVerificationKey,
+  verifyProofOnContract,
+  removeOnChainCredential,
+  revokeCredential,
+  clearContractCache,
+} from './contract-client';
+export type { ContractConfig, VerifyOnContractOptions } from './contract-client';
 
 // Proof composition
 export {

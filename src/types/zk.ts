@@ -245,6 +245,41 @@ export interface ProofVerificationResult {
   method: 'local' | 'on-chain';
   /** Transaction hash if on-chain */
   transactionHash?: string;
+  /** Credential ID if stored on-chain */
+  credentialId?: string;
+}
+
+/** On-chain credential stored after successful proof verification */
+export interface OnChainCredential {
+  id: string;
+  owner: string;
+  circuitType: ZKCircuit;
+  publicSignals: string[];
+  verifiedAt: number;
+  expiresAt: number;
+  claim?: string;
+}
+
+/** Result from the contract's verify_proof method */
+export interface ContractVerificationResult {
+  valid: boolean;
+  credential_id: string | null;
+  gas_used: number;
+}
+
+/** Paginated credentials response from the contract */
+export interface PaginatedCredentials {
+  credentials: OnChainCredential[];
+  total: number;
+  has_more: boolean;
+}
+
+/** Contract statistics */
+export interface ContractStats {
+  total_verifications: number;
+  total_credentials: number;
+  is_paused: boolean;
+  verification_keys_registered: number;
 }
 
 /** ZK prover state */

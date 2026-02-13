@@ -20,6 +20,12 @@ import { OnChainVerificationError } from './errors';
 export interface OnChainVerifyOptions {
   /** Override the default verifier contract ID */
   contractId?: string;
+  /** Store a credential on-chain after successful verification */
+  storeCredential?: boolean;
+  /** Custom expiration in seconds (overrides contract default) */
+  customExpiration?: number;
+  /** Deposit in yoctoNEAR (required if storeCredential is true) */
+  deposit?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,14 +61,25 @@ export async function verifyProofOnChain(
     // Get active wallet
     const wallet = await walletSelector.wallet();
 
-    // Build args for the contract call
+    const storeCredential = options.storeCredential ?? false;
+    const deposit = storeCredential
+      ? (options.deposit ?? ZERO_DEPOSIT.toString())
+      : ZERO_DEPOSIT.toString();
+
+    // Build args for the contract call — includes circuit_type for the new contract
     const args = {
-      proof: {
-        pi_a: proof.proof.pi_a,
-        pi_b: proof.proof.pi_b,
-        pi_c: proof.proof.pi_c,
+      input: {
+        circuit_type: proof.circuit,
+        proof: {
+          pi_a: proof.proof.pi_a,
+          pi_b: proof.proof.pi_b,
+          pi_c: proof.proof.pi_c,
+        },
+        public_signals: proof.publicSignals,
+        store_credential: storeCredential,
+        custom_expiration: options.customExpiration ?? null,
+        claim: null,
       },
-      public_signals: proof.publicSignals,
     };
 
     // Sign and send transaction
@@ -75,21 +92,23 @@ export async function verifyProofOnChain(
             methodName: 'verify_proof',
             args: new TextEncoder().encode(JSON.stringify(args)),
             gas: VERIFICATION_GAS.toString(),
-            deposit: ZERO_DEPOSIT.toString(),
+            deposit,
           },
         },
       ],
     });
 
-    // Parse outcome
+    // Parse outcome — the new contract returns { valid, credential_id, gas_used }
     const txHash = extractTransactionHash(outcome);
-    const isValid = parseVerificationOutcome(outcome);
+    const verificationResult = parseVerificationResult(outcome);
+    const isValid = verificationResult?.valid ?? parseVerificationOutcome(outcome);
 
     return {
       isValid,
       timestamp: new Date().toISOString(),
       method: 'on-chain',
       transactionHash: txHash,
+      credentialId: verificationResult?.credential_id ?? undefined,
       ...(isValid ? {} : { error: 'On-chain verification returned false' }),
     };
   } catch (error) {
@@ -143,6 +162,29 @@ function extractTransactionHash(outcome: unknown): string | undefined {
   }
 
   return undefined;
+}
+
+/** Try to parse the enriched VerificationResult from the new contract. */
+function parseVerificationResult(
+  outcome: unknown
+): { valid: boolean; credential_id: string | null; gas_used: number } | null {
+  if (!outcome || typeof outcome !== 'object') return null;
+  const obj = outcome as Record<string, unknown>;
+  if (typeof obj.status === 'object' && obj.status) {
+    const status = obj.status as Record<string, unknown>;
+    if (typeof status.SuccessValue === 'string') {
+      try {
+        const decoded = atob(status.SuccessValue);
+        const parsed = JSON.parse(decoded);
+        if (typeof parsed === 'object' && parsed !== null && 'valid' in parsed) {
+          return parsed;
+        }
+      } catch {
+        // Fall through to legacy parser
+      }
+    }
+  }
+  return null;
 }
 
 function parseVerificationOutcome(outcome: unknown): boolean {

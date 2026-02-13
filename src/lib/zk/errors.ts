@@ -106,3 +106,50 @@ export class ProofConcurrencyError extends ZKError {
     this.name = 'ProofConcurrencyError';
   }
 }
+
+/** Contract call failed (RPC/network error) */
+export class ContractCallError extends ZKError {
+  constructor(method: string, cause?: string) {
+    super(
+      `Contract call failed: ${method}${cause ? ` — ${cause}` : ''}`,
+      'CONTRACT_CALL_ERROR',
+      { method, cause }
+    );
+    this.name = 'ContractCallError';
+  }
+}
+
+/** Credential not found on-chain */
+export class CredentialNotFoundError extends ZKError {
+  constructor(credentialId: string) {
+    super(
+      `Credential not found on-chain: ${credentialId}`,
+      'CREDENTIAL_NOT_FOUND',
+      { credentialId }
+    );
+    this.name = 'CredentialNotFoundError';
+  }
+}
+
+/** Insufficient NEAR deposit for credential storage */
+export class InsufficientDepositError extends ZKError {
+  constructor(required: string, attached: string) {
+    super(
+      `Insufficient deposit: required ${required} yoctoNEAR, attached ${attached}`,
+      'INSUFFICIENT_DEPOSIT',
+      { required, attached }
+    );
+    this.name = 'InsufficientDepositError';
+  }
+}
+
+/** Contract is paused */
+export class ContractPausedError extends ZKError {
+  constructor() {
+    super(
+      'ZK verifier contract is currently paused',
+      'CONTRACT_PAUSED'
+    );
+    this.name = 'ContractPausedError';
+  }
+}
