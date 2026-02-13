@@ -53,6 +53,11 @@ const envSchema = z.object({
     .transform((v) => v === 'true')
     .default('true'),
 
+  // ZK
+  NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID: z
+    .string()
+    .default('zk-verifier.testnet'),
+
   // Development
   NEXT_PUBLIC_DEBUG_MODE: z
     .string()
@@ -78,6 +83,7 @@ function getEnv() {
     NEXT_PUBLIC_ENABLE_ZK_PROOFS: process.env.NEXT_PUBLIC_ENABLE_ZK_PROOFS,
     NEXT_PUBLIC_ENABLE_AI_FEATURES: process.env.NEXT_PUBLIC_ENABLE_AI_FEATURES,
     NEXT_PUBLIC_ENABLE_DAILY_BRIEFINGS: process.env.NEXT_PUBLIC_ENABLE_DAILY_BRIEFINGS,
+    NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID: process.env.NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID,
     NEXT_PUBLIC_DEBUG_MODE: process.env.NEXT_PUBLIC_DEBUG_MODE,
   });
 
@@ -128,6 +134,9 @@ export const config = {
   },
   encryption: {
     version: env.NEXT_PUBLIC_ENCRYPTION_VERSION,
+  },
+  zk: {
+    verifierContractId: env.NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID,
   },
   features: {
     zkProofs: env.NEXT_PUBLIC_ENABLE_ZK_PROOFS,

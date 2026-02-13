@@ -10,6 +10,7 @@ const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 function createMockResponse(data: unknown, ok = true, contentType = 'application/octet-stream') {
+  const jsonText = JSON.stringify(data);
   return {
     ok,
     status: ok ? 200 : 404,
@@ -17,6 +18,7 @@ function createMockResponse(data: unknown, ok = true, contentType = 'application
     headers: new Headers({ 'content-type': contentType }),
     arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
     json: () => Promise.resolve(data),
+    text: () => Promise.resolve(jsonText),
     body: null, // No streaming in tests
   };
 }
@@ -98,6 +100,108 @@ describe('Artifact Loading', () => {
   describe('isArtifactCached', () => {
     it('returns false for uncached circuits', () => {
       expect(isArtifactCached('grant-track-record')).toBe(false);
+    });
+  });
+
+  describe('SHA256 integrity checks', () => {
+    // Helper to compute SHA-256 of an ArrayBuffer for test setup
+    async function sha256hex(buffer: ArrayBuffer): Promise<string> {
+      const hash = await crypto.subtle.digest('SHA-256', buffer);
+      return Array.from(new Uint8Array(hash))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    it('loads successfully when hashes match', async () => {
+      const wasmBuf = new ArrayBuffer(8);
+      new Uint8Array(wasmBuf).fill(0x01);
+      const zkeyBuf = new ArrayBuffer(8);
+      new Uint8Array(zkeyBuf).fill(0x02);
+      const vkeyObj = { protocol: 'groth16', curve: 'bn128' };
+      const vkeyText = JSON.stringify(vkeyObj);
+      const vkeyBytes = new TextEncoder().encode(vkeyText);
+
+      // Precompute correct hashes
+      const wasmHash = await sha256hex(wasmBuf);
+      const zkeyHash = await sha256hex(zkeyBuf);
+      const vkeyHash = await sha256hex(vkeyBytes.buffer);
+
+      // Mock the circuit registry to return hashes
+      const registry = await import('../circuit-registry');
+      const originalGetConfig = registry.getCircuitConfig;
+      const config = originalGetConfig('verified-builder');
+      vi.spyOn(registry, 'getCircuitConfig').mockReturnValue({
+        ...config,
+        wasmHash,
+        zkeyHash,
+        vkeyHash,
+      });
+
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true, status: 200, statusText: 'OK',
+          headers: new Headers({}),
+          arrayBuffer: () => Promise.resolve(wasmBuf),
+          body: null,
+        })
+        .mockResolvedValueOnce({
+          ok: true, status: 200, statusText: 'OK',
+          headers: new Headers({}),
+          arrayBuffer: () => Promise.resolve(zkeyBuf),
+          body: null,
+        })
+        .mockResolvedValueOnce({
+          ok: true, status: 200, statusText: 'OK',
+          headers: new Headers({}),
+          text: () => Promise.resolve(vkeyText),
+          body: null,
+        });
+
+      const artifacts = await loadCircuitArtifacts('verified-builder');
+      expect(artifacts.wasm).toBeInstanceOf(ArrayBuffer);
+      expect(artifacts.vkey).toEqual(vkeyObj);
+
+      vi.restoreAllMocks();
+    });
+
+    it('throws ArtifactLoadError on hash mismatch', async () => {
+      const wasmBuf = new ArrayBuffer(8);
+      new Uint8Array(wasmBuf).fill(0x01);
+
+      // Mock the circuit registry with a wrong hash
+      const registry = await import('../circuit-registry');
+      const config = registry.getCircuitConfig('verified-builder');
+      vi.spyOn(registry, 'getCircuitConfig').mockReturnValue({
+        ...config,
+        wasmHash: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true, status: 200, statusText: 'OK',
+        headers: new Headers({}),
+        arrayBuffer: () => Promise.resolve(wasmBuf),
+        body: null,
+      });
+
+      await expect(
+        loadCircuitArtifacts('verified-builder')
+      ).rejects.toThrow('Integrity check failed');
+
+      vi.restoreAllMocks();
+    });
+
+    it('skips check when no hash configured', async () => {
+      const mockVkey = { protocol: 'groth16' };
+
+      // Default config has undefined hashes — check should be skipped
+      mockFetch
+        .mockResolvedValueOnce(createMockResponse(null))
+        .mockResolvedValueOnce(createMockResponse(null))
+        .mockResolvedValueOnce(createMockResponse(mockVkey, true, 'application/json'));
+
+      // Should succeed without integrity errors
+      const artifacts = await loadCircuitArtifacts('verified-builder');
+      expect(artifacts.vkey).toEqual(mockVkey);
     });
   });
 });

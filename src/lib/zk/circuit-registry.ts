@@ -25,6 +25,11 @@ const CIRCUIT_REGISTRY: Record<ZKCircuit, CircuitConfig> = {
     wasmPath: `${ZK_ARTIFACTS_BASE_PATH}/verified-builder.wasm`,
     zkeyPath: `${ZK_ARTIFACTS_BASE_PATH}/verified-builder.zkey`,
     vkeyPath: `${ZK_ARTIFACTS_BASE_PATH}/verified-builder.vkey.json`,
+    // SHA-256 hashes populated by `npm run circuits:hashes` after build.
+    // When undefined, integrity checks are skipped (backward compatible).
+    wasmHash: undefined,
+    zkeyHash: undefined,
+    vkeyHash: undefined,
   },
   'grant-track-record': {
     id: 'grant-track-record',
@@ -41,6 +46,9 @@ const CIRCUIT_REGISTRY: Record<ZKCircuit, CircuitConfig> = {
     wasmPath: `${ZK_ARTIFACTS_BASE_PATH}/grant-track-record.wasm`,
     zkeyPath: `${ZK_ARTIFACTS_BASE_PATH}/grant-track-record.zkey`,
     vkeyPath: `${ZK_ARTIFACTS_BASE_PATH}/grant-track-record.vkey.json`,
+    wasmHash: undefined,
+    zkeyHash: undefined,
+    vkeyHash: undefined,
   },
   'team-attestation': {
     id: 'team-attestation',
@@ -56,6 +64,9 @@ const CIRCUIT_REGISTRY: Record<ZKCircuit, CircuitConfig> = {
     wasmPath: `${ZK_ARTIFACTS_BASE_PATH}/team-attestation.wasm`,
     zkeyPath: `${ZK_ARTIFACTS_BASE_PATH}/team-attestation.zkey`,
     vkeyPath: `${ZK_ARTIFACTS_BASE_PATH}/team-attestation.vkey.json`,
+    wasmHash: undefined,
+    zkeyHash: undefined,
+    vkeyHash: undefined,
   },
 };
 

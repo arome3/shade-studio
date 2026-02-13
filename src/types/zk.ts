@@ -77,6 +77,24 @@ export interface ZKProof {
   expiresAt?: string;
 }
 
+/** Bundle of multiple proofs for composite credential verification */
+export interface ProofBundle {
+  /** Bundle identifier */
+  id: string;
+  /** Generated proofs */
+  proofs: ZKProof[];
+  /** Circuits included in this bundle */
+  circuits: ZKCircuit[];
+  /** Bundle generation status */
+  status: 'pending' | 'generating' | 'complete' | 'partial' | 'failed';
+  /** Bundle creation timestamp */
+  createdAt: string;
+  /** Bundle completion timestamp */
+  completedAt?: string;
+  /** Per-circuit errors if any */
+  errors: Array<{ circuit: ZKCircuit; error: string }>;
+}
+
 /** ZK credential for on-chain verification */
 export interface ZKCredential {
   /** Credential identifier */
@@ -187,6 +205,12 @@ export interface CircuitConfig {
   zkeyPath: string;
   /** Path to verification key JSON */
   vkeyPath: string;
+  /** SHA-256 hex hash of WASM artifact (optional — check skipped if absent) */
+  wasmHash?: string;
+  /** SHA-256 hex hash of zkey artifact (optional — check skipped if absent) */
+  zkeyHash?: string;
+  /** SHA-256 hex hash of vkey JSON file (optional — check skipped if absent) */
+  vkeyHash?: string;
 }
 
 /** Proof generation request */

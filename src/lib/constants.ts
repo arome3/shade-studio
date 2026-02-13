@@ -61,6 +61,15 @@ export const ZK_CIRCUIT_PARAMS = {
 /** Base path for compiled circuit artifacts served from public/ */
 export const ZK_ARTIFACTS_BASE_PATH = '/circuits' as const;
 
+/** IndexedDB constants for persistent ZK artifact caching */
+export const ZK_CACHE_CONSTANTS = {
+  DB_NAME: 'shade-studio-zk-artifacts',
+  DB_VERSION: 1,
+  BINARY_STORE: 'binary-artifacts',
+  VKEY_STORE: 'vkey-artifacts',
+  MAX_CACHE_SIZE: 200 * 1024 * 1024,
+} as const;
+
 // Storage keys
 export const STORAGE_KEYS = {
   WALLET_CONNECTION: 'near-wallet-connection',

@@ -83,3 +83,26 @@ export class ProofVerificationError extends ZKError {
     this.name = 'ProofVerificationError';
   }
 }
+
+/** On-chain proof verification failed */
+export class OnChainVerificationError extends ZKError {
+  constructor(cause?: string) {
+    super(
+      `On-chain proof verification failed${cause ? `: ${cause}` : ''}`,
+      'ON_CHAIN_VERIFICATION_ERROR',
+      { cause }
+    );
+    this.name = 'OnChainVerificationError';
+  }
+}
+
+/** Proof concurrency limit exceeded (non-blocking acquire failed) */
+export class ProofConcurrencyError extends ZKError {
+  constructor() {
+    super(
+      'Another proof operation is already in progress',
+      'PROOF_CONCURRENCY_ERROR'
+    );
+    this.name = 'ProofConcurrencyError';
+  }
+}
