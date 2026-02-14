@@ -76,6 +76,8 @@ export interface Project {
   documentIds: string[];
   /** Active proposal ID if any */
   activeProposalId?: string;
+  /** Sub-account ID if project has its own NEAR account */
+  subAccountId?: string;
   /** Creation timestamp (ISO 8601) */
   createdAt: string;
   /** Last update timestamp (ISO 8601) */

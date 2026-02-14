@@ -77,6 +77,7 @@ export const STORAGE_KEYS = {
   ENCRYPTION_KEYS: 'encryption-keys',
   DRAFT_DOCUMENTS: 'draft-documents',
   USER_PREFERENCES: 'user-preferences',
+  ACCESS_KEYS: 'shade-studio:access-keys',
 } as const;
 
 // API Routes
