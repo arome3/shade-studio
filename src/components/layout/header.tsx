@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Shield, FileText, FolderOpen, Sparkles } from 'lucide-react';
+import { Shield, FileText, FolderOpen, Sparkles, Cpu } from 'lucide-react';
 import { WalletConnectButton, ConnectionStatus } from '@/components/features/auth';
 import { useMounted } from '@/hooks/use-mounted';
 import { useIsConnected } from '@/stores/auth-store';
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: '/projects', label: 'Projects', icon: FolderOpen },
   { href: '/documents', label: 'Documents', icon: FileText },
   { href: '/ai', label: 'AI Studio', icon: Sparkles },
+  { href: '/ai/pipelines', label: 'Pipelines', icon: Cpu },
 ] as const;
 
 /**
