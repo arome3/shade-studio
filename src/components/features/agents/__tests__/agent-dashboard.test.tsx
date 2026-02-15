@@ -10,6 +10,8 @@ const mockHook = {
   templates: [] as unknown[],
   myAgents: [] as unknown[],
   activeAgent: null,
+  orphanedDeploys: [] as unknown[],
+  keyHealth: null,
   isFetching: false,
   isDeploying: false,
   error: null as string | null,
@@ -18,7 +20,10 @@ const mockHook = {
   selectAgent: vi.fn(),
   verify: vi.fn(),
   invoke: vi.fn(),
+  cancelInvocation: vi.fn(),
   deactivate: vi.fn(),
+  recoverOrphanedDeploy: vi.fn(),
+  cleanupOrphanedDeploy: vi.fn(),
   refreshTemplates: vi.fn(),
   refreshMyAgents: vi.fn(),
   clearError: vi.fn(),
@@ -88,6 +93,8 @@ describe('AgentDashboard', () => {
     mockHook.templates = [];
     mockHook.myAgents = [];
     mockHook.activeAgent = null;
+    mockHook.orphanedDeploys = [];
+    mockHook.keyHealth = null;
     mockHook.isFetching = false;
     mockHook.isDeploying = false;
     mockHook.error = null;

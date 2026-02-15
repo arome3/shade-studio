@@ -42,6 +42,19 @@ if (typeof window !== 'undefined') {
   }));
 }
 
+// Environment variable stubs — only set if not already defined
+process.env.NEXT_PUBLIC_NEAR_NETWORK ??= 'testnet';
+process.env.NEXT_PUBLIC_AI_ENDPOINT ??= 'https://api.test.near.ai';
+process.env.NEXT_PUBLIC_IPFS_GATEWAY ??= 'https://gateway.pinata.cloud/ipfs';
+process.env.NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID ??= 'zk-verifier.testnet';
+process.env.NEXT_PUBLIC_ASYNC_AI_CONTRACT_ID ??= 'async-ai.testnet';
+process.env.NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID ??= 'agent-registry.testnet';
+process.env.NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID ??= 'grant-registry.testnet';
+process.env.NEXT_PUBLIC_ENABLE_AI_FEATURES ??= 'true';
+process.env.NEXT_PUBLIC_ENABLE_ZK_PROOFS ??= 'true';
+process.env.NEXT_PUBLIC_ENABLE_IPFS ??= 'true';
+process.env.NEXT_PUBLIC_ENABLE_SOCIAL ??= 'true';
+
 // Suppress console errors in tests unless explicitly needed
 const originalError = console.error;
 console.error = (...args: unknown[]) => {

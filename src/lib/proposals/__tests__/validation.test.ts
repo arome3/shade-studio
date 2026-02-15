@@ -246,8 +246,8 @@ describe('checkCompleteness', () => {
     const result = checkCompleteness(workflow);
 
     expect(result.sectionStatuses).toHaveLength(2);
-    expect(result.sectionStatuses[0].isComplete).toBe(true);
-    expect(result.sectionStatuses[1].isComplete).toBe(false);
+    expect(result.sectionStatuses[0]!.isComplete).toBe(true);
+    expect(result.sectionStatuses[1]!.isComplete).toBe(false);
   });
 
   it('warns about word limit violations', () => {

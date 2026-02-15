@@ -130,7 +130,7 @@ describe('createProposalFromTemplate', () => {
       'alice.near'
     );
 
-    expect(workflow.activeSectionId).toBe(workflow.sections[0].id);
+    expect(workflow.activeSectionId).toBe(workflow.sections[0]!.id);
   });
 
   it('throws for unknown template', () => {

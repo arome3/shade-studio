@@ -55,8 +55,8 @@ describe('useProposals', () => {
 
       expect(proposalId!).toBeDefined();
       expect(result.current.proposals).toHaveLength(1);
-      expect(result.current.proposals[0].proposal.title).toBe('My Grant Proposal');
-      expect(result.current.proposals[0].proposal.ownerId).toBe('test.near');
+      expect(result.current.proposals[0]!.proposal.title).toBe('My Grant Proposal');
+      expect(result.current.proposals[0]!.proposal.ownerId).toBe('test.near');
     });
 
     it('should create multiple proposals', () => {
@@ -97,13 +97,13 @@ describe('useProposals', () => {
         proposalId = result.current.createProposal('potlock-standard', 'Test');
       });
 
-      const sectionId = result.current.proposals[0].sections[0].id;
+      const sectionId = result.current.proposals[0]!.sections[0]!.id;
 
       act(() => {
         result.current.updateSection(proposalId!, sectionId, 'New content');
       });
 
-      const updated = result.current.proposals[0].sections.find(
+      const updated = result.current.proposals[0]!.sections.find(
         (s) => s.id === sectionId
       );
       expect(updated!.content).toBe('New content');
@@ -124,7 +124,7 @@ describe('useProposals', () => {
         result.current.updateStatus(proposalId!, 'ready');
       });
 
-      expect(result.current.proposals[0].proposal.status).toBe('ready');
+      expect(result.current.proposals[0]!.proposal.status).toBe('ready');
     });
   });
 
@@ -141,8 +141,8 @@ describe('useProposals', () => {
         result.current.saveVersion(proposalId!, 'First save');
       });
 
-      expect(result.current.proposals[0].version).toBe(2);
-      expect(result.current.proposals[0].versionHistory).toHaveLength(1);
+      expect(result.current.proposals[0]!.version).toBe(2);
+      expect(result.current.proposals[0]!.versionHistory).toHaveLength(1);
     });
   });
 
@@ -160,7 +160,7 @@ describe('useProposals', () => {
       });
 
       expect(result.current.filteredProposals).toHaveLength(1);
-      expect(result.current.filteredProposals[0].proposal.title).toBe('Alpha Project');
+      expect(result.current.filteredProposals[0]!.proposal.title).toBe('Alpha Project');
     });
 
     it('should filter by status', () => {

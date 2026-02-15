@@ -11,16 +11,25 @@ export default defineConfig({
     exclude: ['node_modules', '.next', 'contracts'],
     globals: true,
     css: false,
+    testTimeout: 30000,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'src/types/',
+        'src/test/',
+        'e2e/',
         '**/*.d.ts',
         '**/*.config.*',
         '**/index.ts',
       ],
+      thresholds: {
+        statements: 70,
+        branches: 65,
+        functions: 70,
+        lines: 70,
+      },
     },
   },
   resolve: {
@@ -31,6 +40,7 @@ export default defineConfig({
       '@/hooks': path.resolve(__dirname, './src/hooks'),
       '@/types': path.resolve(__dirname, './src/types'),
       '@/stores': path.resolve(__dirname, './src/stores'),
+      '@/test': path.resolve(__dirname, './src/test'),
     },
   },
 });

@@ -49,7 +49,7 @@ describe('useProposalStore', () => {
 
       const state = useProposalStore.getState();
       expect(state.proposals['test-1']).toBeDefined();
-      expect(state.proposals['test-1'].proposal.title).toBe('Test Proposal');
+      expect(state.proposals['test-1']!.proposal.title).toBe('Test Proposal');
     });
 
     it('should add multiple workflows', () => {
@@ -82,14 +82,14 @@ describe('useProposalStore', () => {
   describe('updateSection', () => {
     it('should update section content and wordCount', () => {
       const workflow = createTestWorkflow({ id: 'edit-1' });
-      const sectionId = workflow.sections[0].id;
+      const sectionId = workflow.sections[0]!.id;
 
       act(() => {
         useProposalStore.getState().addWorkflow(workflow);
         useProposalStore.getState().updateSection('edit-1', sectionId, 'Hello world');
       });
 
-      const updated = useProposalStore.getState().proposals['edit-1'];
+      const updated = useProposalStore.getState().proposals['edit-1']!;
       const section = updated.sections.find((s) => s.id === sectionId);
       expect(section!.content).toBe('Hello world');
       expect(section!.wordCount).toBe(2);
@@ -112,7 +112,7 @@ describe('useProposalStore', () => {
         );
       });
 
-      const updated = useProposalStore.getState().proposals['sync-1'];
+      const updated = useProposalStore.getState().proposals['sync-1']!;
       expect(updated.proposal.content.summary).toBe('New summary content');
     });
 
@@ -130,7 +130,7 @@ describe('useProposalStore', () => {
         );
       });
 
-      const updated = useProposalStore.getState().proposals['complete-1'];
+      const updated = useProposalStore.getState().proposals['complete-1']!;
       const section = updated.sections.find((s) => s.id === requiredSection!.id);
       expect(section!.isComplete).toBe(true);
     });
@@ -145,11 +145,11 @@ describe('useProposalStore', () => {
         useProposalStore.getState().saveVersion('ver-1', 'Initial draft');
       });
 
-      const updated = useProposalStore.getState().proposals['ver-1'];
+      const updated = useProposalStore.getState().proposals['ver-1']!;
       expect(updated.version).toBe(2);
       expect(updated.versionHistory).toHaveLength(1);
-      expect(updated.versionHistory[0].changeSummary).toBe('Initial draft');
-      expect(updated.versionHistory[0].version).toBe(1);
+      expect(updated.versionHistory[0]!.changeSummary).toBe('Initial draft');
+      expect(updated.versionHistory[0]!.version).toBe(1);
     });
   });
 
@@ -162,7 +162,7 @@ describe('useProposalStore', () => {
         useProposalStore.getState().updateStatus('status-1', 'ready');
       });
 
-      const updated = useProposalStore.getState().proposals['status-1'];
+      const updated = useProposalStore.getState().proposals['status-1']!;
       expect(updated.proposal.status).toBe('ready');
     });
   });
@@ -190,13 +190,13 @@ describe('useProposalStore', () => {
         useProposalStore.getState().toggleAIPanel('ai-1');
       });
 
-      expect(useProposalStore.getState().proposals['ai-1'].showAIPanel).toBe(true);
+      expect(useProposalStore.getState().proposals['ai-1']!.showAIPanel).toBe(true);
 
       act(() => {
         useProposalStore.getState().toggleAIPanel('ai-1');
       });
 
-      expect(useProposalStore.getState().proposals['ai-1'].showAIPanel).toBe(false);
+      expect(useProposalStore.getState().proposals['ai-1']!.showAIPanel).toBe(false);
     });
   });
 
@@ -209,7 +209,7 @@ describe('useProposalStore', () => {
       });
 
       const exported = useProposalStore.getState().exportData();
-      expect(exported.proposals['export-1']).toBeDefined();
+      expect(exported.proposals['export-1']!).toBeDefined();
       expect(exported.exportedAt).toBeGreaterThan(0);
     });
 
@@ -225,8 +225,8 @@ describe('useProposalStore', () => {
       });
 
       const state = useProposalStore.getState();
-      expect(state.proposals['existing'].proposal.title).toBe('Existing');
-      expect(state.proposals['new-one']).toBeDefined();
+      expect(state.proposals['existing']!.proposal.title).toBe('Existing');
+      expect(state.proposals['new-one']!).toBeDefined();
     });
   });
 
