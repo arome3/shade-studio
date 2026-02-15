@@ -80,6 +80,15 @@ const envSchema = z.object({
     .string()
     .default('agent-registry.testnet'),
 
+  // Grant Registry
+  NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID: z
+    .string()
+    .default('grant-registry.testnet'),
+  NEXT_PUBLIC_ENABLE_GRANT_REGISTRY: z
+    .string()
+    .transform((v) => v === 'true')
+    .default('true'),
+
   // Development
   NEXT_PUBLIC_DEBUG_MODE: z
     .string()
@@ -111,6 +120,8 @@ function getEnv() {
     NEXT_PUBLIC_ENABLE_ASYNC_AI: process.env.NEXT_PUBLIC_ENABLE_ASYNC_AI,
     NEXT_PUBLIC_ENABLE_SHADE_AGENTS: process.env.NEXT_PUBLIC_ENABLE_SHADE_AGENTS,
     NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID: process.env.NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID,
+    NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID: process.env.NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID,
+    NEXT_PUBLIC_ENABLE_GRANT_REGISTRY: process.env.NEXT_PUBLIC_ENABLE_GRANT_REGISTRY,
     NEXT_PUBLIC_DEBUG_MODE: process.env.NEXT_PUBLIC_DEBUG_MODE,
   });
 
@@ -171,6 +182,9 @@ export const config = {
   agents: {
     registryContractId: env.NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID,
   },
+  grantRegistry: {
+    contractId: env.NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID,
+  },
   features: {
     zkProofs: env.NEXT_PUBLIC_ENABLE_ZK_PROOFS,
     aiFeatures: env.NEXT_PUBLIC_ENABLE_AI_FEATURES,
@@ -178,6 +192,7 @@ export const config = {
     chainSignatures: env.NEXT_PUBLIC_ENABLE_CHAIN_SIGNATURES,
     asyncAI: env.NEXT_PUBLIC_ENABLE_ASYNC_AI,
     shadeAgents: env.NEXT_PUBLIC_ENABLE_SHADE_AGENTS,
+    grantRegistry: env.NEXT_PUBLIC_ENABLE_GRANT_REGISTRY,
   },
   debug: env.NEXT_PUBLIC_DEBUG_MODE,
 } as const;

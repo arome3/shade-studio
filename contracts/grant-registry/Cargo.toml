@@ -1,0 +1,25 @@
+[package]
+name = "grant-registry"
+version = "0.1.0"
+edition = "2021"
+authors = ["Shade Studio"]
+description = "Global Grant Registry — composable on-chain grant program, project, and application tracking for NEAR"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "5.24"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+borsh = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+near-sdk = { version = "5.24", features = ["unit-testing"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+panic = "abort"
+codegen-units = 1
+overflow-checks = true
