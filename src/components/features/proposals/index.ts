@@ -10,3 +10,6 @@ export { CompletenessChecker } from './completeness-checker';
 export { ExportDialog } from './export-dialog';
 export { ProposalEditor } from './proposal-editor';
 export { ProposalList } from './proposal-list';
+export { ChainSelector } from './chain-selector';
+export { SubmissionStatus } from './submission-status';
+export { CrossChainSubmitButton } from './cross-chain-submit-button';

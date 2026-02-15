@@ -52,6 +52,10 @@ const envSchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .default('true'),
+  NEXT_PUBLIC_ENABLE_CHAIN_SIGNATURES: z
+    .string()
+    .transform((v) => v === 'true')
+    .default('false'),
 
   // ZK
   NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID: z
@@ -83,6 +87,7 @@ function getEnv() {
     NEXT_PUBLIC_ENABLE_ZK_PROOFS: process.env.NEXT_PUBLIC_ENABLE_ZK_PROOFS,
     NEXT_PUBLIC_ENABLE_AI_FEATURES: process.env.NEXT_PUBLIC_ENABLE_AI_FEATURES,
     NEXT_PUBLIC_ENABLE_DAILY_BRIEFINGS: process.env.NEXT_PUBLIC_ENABLE_DAILY_BRIEFINGS,
+    NEXT_PUBLIC_ENABLE_CHAIN_SIGNATURES: process.env.NEXT_PUBLIC_ENABLE_CHAIN_SIGNATURES,
     NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID: process.env.NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID,
     NEXT_PUBLIC_DEBUG_MODE: process.env.NEXT_PUBLIC_DEBUG_MODE,
   });
@@ -142,6 +147,7 @@ export const config = {
     zkProofs: env.NEXT_PUBLIC_ENABLE_ZK_PROOFS,
     aiFeatures: env.NEXT_PUBLIC_ENABLE_AI_FEATURES,
     dailyBriefings: env.NEXT_PUBLIC_ENABLE_DAILY_BRIEFINGS,
+    chainSignatures: env.NEXT_PUBLIC_ENABLE_CHAIN_SIGNATURES,
   },
   debug: env.NEXT_PUBLIC_DEBUG_MODE,
 } as const;
