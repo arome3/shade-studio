@@ -66,6 +66,18 @@ const nextConfig: NextConfig = {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
           },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval'",  // unsafe-eval needed for snarkjs WASM
+              "style-src 'self' 'unsafe-inline'",  // Tailwind needs inline styles
+              "img-src 'self' data: https://gateway.pinata.cloud https://ipfs.io",
+              "connect-src 'self' https://rpc.testnet.near.org https://rpc.mainnet.near.org https://archival-rpc.testnet.near.org https://archival-rpc.mainnet.near.org https://api.near.ai https://api.pinata.cloud",
+              "font-src 'self'",
+              "frame-ancestors 'self'",
+            ].join('; '),
+          },
         ],
       },
     ];
