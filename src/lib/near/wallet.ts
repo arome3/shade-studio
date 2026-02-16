@@ -51,7 +51,7 @@ export async function initWalletSelector(): Promise<WalletSelector> {
       walletSelectorInstance = await setupWalletSelector({
         network: networkConfig.networkId,
         modules: [
-          setupMeteorWallet() as WalletModuleFactory,
+          setupMeteorWallet() as unknown as WalletModuleFactory,
           setupMyNearWallet(),
           setupHereWallet(),
         ],
