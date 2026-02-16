@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useWallet } from '@/hooks/use-wallet';
 import { useEncryption } from '@/hooks/use-encryption';
+import { hasPendingSignMessageResult } from '@/lib/near/sign-message-callback';
 
 interface EncryptionProviderProps {
   children: ReactNode;
@@ -55,11 +56,14 @@ export function EncryptionProvider({
     const previousAccountId = previousAccountIdRef.current;
 
     // Case 1: Wallet connected and we should auto-initialize
-    if (isConnected && accountId && autoInitialize) {
+    // Also auto-init when returning from a sign-message redirect callback,
+    // regardless of the autoInitialize prop — the user already signed.
+    const hasCallback = hasPendingSignMessageResult();
+    if (isConnected && accountId && (autoInitialize || hasCallback)) {
       // Check if this is a new account or we haven't initialized yet
       const isNewAccount = previousAccountId !== accountId;
       const needsInit = status === 'uninitialized' || status === 'locked';
-      const shouldInit = (isNewAccount || needsInit) && !initAttemptedRef.current;
+      const shouldInit = (isNewAccount || needsInit || hasCallback) && !initAttemptedRef.current;
 
       if (shouldInit) {
         initAttemptedRef.current = true;

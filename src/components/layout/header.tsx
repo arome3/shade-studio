@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils/cn';
  * Navigation items for authenticated users.
  */
 const NAV_ITEMS = [
-  { href: '/projects', label: 'Projects', icon: FolderOpen },
+  { href: '/dashboard', label: 'Dashboard', icon: FolderOpen },
   { href: '/documents', label: 'Documents', icon: FileText },
   { href: '/ai', label: 'AI Studio', icon: Sparkles },
   { href: '/ai/pipelines', label: 'Pipelines', icon: Cpu },

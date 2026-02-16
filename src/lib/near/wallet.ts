@@ -6,10 +6,11 @@
 // Import wallet selector modal styles
 import '@near-wallet-selector/modal-ui/styles.css';
 
-import { setupWalletSelector, type WalletSelector } from '@near-wallet-selector/core';
+import { setupWalletSelector, type WalletSelector, type WalletModuleFactory } from '@near-wallet-selector/core';
 import { setupModal, type WalletSelectorModal } from '@near-wallet-selector/modal-ui';
 import { setupMyNearWallet } from '@near-wallet-selector/my-near-wallet';
 import { setupHereWallet } from '@near-wallet-selector/here-wallet';
+import { setupMeteorWallet } from '@near-wallet-selector/meteor-wallet';
 
 import { config } from '@/lib/config';
 import { getNetworkConfig } from './config';
@@ -50,6 +51,7 @@ export async function initWalletSelector(): Promise<WalletSelector> {
       walletSelectorInstance = await setupWalletSelector({
         network: networkConfig.networkId,
         modules: [
+          setupMeteorWallet() as WalletModuleFactory,
           setupMyNearWallet(),
           setupHereWallet(),
         ],

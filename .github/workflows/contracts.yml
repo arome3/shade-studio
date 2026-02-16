@@ -1,0 +1,138 @@
+name: Contracts
+
+on:
+  push:
+    paths: ['contracts/**']
+    branches: [main]
+  pull_request:
+    paths: ['contracts/**']
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      network:
+        description: 'Target network'
+        required: true
+        type: choice
+        options:
+          - testnet
+          - mainnet
+      owner_account:
+        description: 'Owner account ID (e.g. deployer.testnet)'
+        required: true
+        type: string
+      contracts:
+        description: 'Contracts to deploy (comma-separated or "all")'
+        required: true
+        default: 'all'
+        type: string
+
+concurrency:
+  group: contracts-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build ${{ matrix.contract }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        contract:
+          - zk-verifier
+          - async-ai-processor
+          - shade-agent-registry
+          - grant-registry
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust 1.86 (NEAR VM compatible)
+        uses: dtolnay/rust-toolchain@1.86
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wabt (for NEAR VM compatibility)
+        run: sudo apt-get update && sudo apt-get install -y wabt
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            contracts/${{ matrix.contract }}/target/
+          key: cargo-${{ matrix.contract }}-${{ hashFiles(format('contracts/{0}/Cargo.lock', matrix.contract)) }}
+          restore-keys: |
+            cargo-${{ matrix.contract }}-
+
+      - name: Build contract
+        working-directory: contracts/${{ matrix.contract }}
+        run: bash build.sh
+
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-${{ matrix.contract }}
+          path: contracts/${{ matrix.contract }}/out/*.wasm
+          retention-days: 30
+
+  deploy:
+    name: Deploy Contracts
+    needs: build-and-test
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.network }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install near-cli
+        run: npm install -g near-cli
+
+      - name: Download all WASM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Deploy contracts
+        env:
+          NEAR_ENV: ${{ github.event.inputs.network }}
+        run: |
+          NETWORK="${{ github.event.inputs.network }}"
+          OWNER="${{ github.event.inputs.owner_account }}"
+          CONTRACTS="${{ github.event.inputs.contracts }}"
+
+          get_contract_id() {
+            case "$1" in
+              zk-verifier)           echo "zk-verifier.$OWNER" ;;
+              async-ai-processor)    echo "async-ai.$OWNER" ;;
+              shade-agent-registry)  echo "agent-registry.$OWNER" ;;
+              grant-registry)        echo "grant-registry.$OWNER" ;;
+              *) echo "ERROR: unknown contract $1"; exit 1 ;;
+            esac
+          }
+
+          if [ "$CONTRACTS" = "all" ]; then
+            deploy_list="zk-verifier async-ai-processor shade-agent-registry grant-registry"
+          else
+            deploy_list=$(echo "$CONTRACTS" | tr ',' ' ')
+          fi
+
+          for contract in $deploy_list; do
+            contract=$(echo "$contract" | xargs)
+            contract_id=$(get_contract_id "$contract")
+            wasm_file=$(find "artifacts/wasm-$contract" -name "*.wasm" -type f | head -1)
+
+            if [ -z "$wasm_file" ]; then
+              echo "ERROR: No WASM found for $contract"
+              exit 1
+            fi
+
+            echo "Deploying $contract → $contract_id"
+            near deploy "$contract_id" "$wasm_file"
+            echo "Deployed: $contract_id"
+          done

@@ -35,7 +35,7 @@ export enum EncryptionErrorCode {
  */
 const ERROR_MESSAGES: Record<EncryptionErrorCode, string> = {
   [EncryptionErrorCode.NOT_INITIALIZED]:
-    'Encryption has not been initialized. Please connect your wallet first.',
+    'Encryption has not been initialized. Please unlock encryption on the Documents page first.',
   [EncryptionErrorCode.WALLET_NOT_CONNECTED]:
     'Wallet is not connected. Please connect your wallet to enable encryption.',
   [EncryptionErrorCode.KEY_DERIVATION_FAILED]:

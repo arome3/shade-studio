@@ -55,8 +55,10 @@ export default function HomePage() {
             Launch Studio
           </Link>
           <Link
-            href="/docs"
+            href="https://github.com/arome3/shade-studio#readme"
             className="px-8 py-3 bg-surface border border-border text-text-primary font-semibold rounded-lg hover:bg-surface-hover hover:border-border-hover transition-colors text-center"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Documentation
           </Link>
@@ -164,13 +166,15 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-6">
             <Link
-              href="/docs"
+              href="https://github.com/arome3/shade-studio#readme"
               className="text-sm text-text-muted hover:text-text-secondary transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Docs
             </Link>
             <Link
-              href="https://github.com"
+              href="https://github.com/arome3/shade-studio"
               className="text-sm text-text-muted hover:text-text-secondary transition-colors"
               target="_blank"
               rel="noopener noreferrer"

@@ -34,7 +34,7 @@ export function Providers({ children }: ProvidersProps) {
       }}
     >
       <WalletProvider>
-        <EncryptionProvider>{children}</EncryptionProvider>
+        <EncryptionProvider autoInitialize={false}>{children}</EncryptionProvider>
       </WalletProvider>
     </ErrorBoundary>
   );

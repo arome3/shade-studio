@@ -62,3 +62,4 @@ contracts/**/Cargo.lock
 # Markdown files (except README)
 *.md
 !README.md
+demo-assets/

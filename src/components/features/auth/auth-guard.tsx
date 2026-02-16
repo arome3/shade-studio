@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from '@/hooks/use-wallet';
 import { useMounted } from '@/hooks/use-mounted';
 import { useOnWalletDisconnect } from '@/hooks/use-wallet-events';
+
+/** Max time (ms) to wait for reconnection before redirecting */
+const RECONNECT_TIMEOUT_MS = 5000;
 
 interface AuthGuardProps {
   /** Content to render when authenticated */
@@ -23,6 +26,7 @@ interface AuthGuardProps {
  * - Shows loading state while checking auth
  * - Redirects if not connected after initialization
  * - Listens for disconnect events and redirects
+ * - Times out after 5s to prevent infinite spinner on failed reconnects
  *
  * @example
  * // In a layout or page
@@ -38,11 +42,23 @@ export function AuthGuard({
   const router = useRouter();
   const mounted = useMounted();
   const { isConnected, isConnecting, isInitialized } = useWallet();
+  const [timedOut, setTimedOut] = useState(false);
 
   // Redirect on disconnect
   useOnWalletDisconnect(() => {
     router.push(redirectTo);
   });
+
+  // Timeout: if still connecting after RECONNECT_TIMEOUT_MS, give up
+  useEffect(() => {
+    if (!mounted || isConnected || !isConnecting) return;
+
+    const timer = setTimeout(() => {
+      setTimedOut(true);
+    }, RECONNECT_TIMEOUT_MS);
+
+    return () => clearTimeout(timer);
+  }, [mounted, isConnected, isConnecting]);
 
   // Handle redirect when not connected
   useEffect(() => {
@@ -53,15 +69,20 @@ export function AuthGuard({
     if (!isConnecting && !isConnected) {
       router.push(redirectTo);
     }
-  }, [mounted, isInitialized, isConnecting, isConnected, router, redirectTo]);
+
+    // If reconnection timed out, redirect
+    if (timedOut && !isConnected) {
+      router.push(redirectTo);
+    }
+  }, [mounted, isInitialized, isConnecting, isConnected, timedOut, router, redirectTo]);
 
   // Not mounted yet - prevent hydration issues
   if (!mounted) {
     return fallback ?? <AuthGuardFallback />;
   }
 
-  // Still initializing or connecting
-  if (!isInitialized || isConnecting) {
+  // Still initializing or connecting (but not timed out)
+  if ((!isInitialized || isConnecting) && !timedOut) {
     return fallback ?? <AuthGuardFallback />;
   }
 

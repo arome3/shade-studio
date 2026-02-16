@@ -151,6 +151,7 @@ export function useDocuments(projectId?: string): UseDocumentsReturn {
 
   /**
    * Sign and send a transaction via the wallet.
+   * Converts NAJ-format actions (from near-social-js) to Wallet Selector format.
    */
   const signAndSendTransaction = useCallback(
     async (transaction: { receiverId: string; actions: unknown[] }) => {
@@ -177,11 +178,23 @@ export function useDocuments(projectId?: string): UseDocumentsReturn {
             throw new Error('Invalid action type');
           }
 
+          // Decode Uint8Array args back to a JSON object.
+          // near-social-js encodes the args as JSON bytes, but the
+          // Wallet Selector expects a plain object (it re-encodes internally).
+          let args: Record<string, unknown>;
+          try {
+            const argsJson = new TextDecoder().decode(typedAction.functionCall.args);
+            args = JSON.parse(argsJson);
+          } catch {
+            // Fallback: pass as base64-encoded object if not valid JSON
+            args = { data: Array.from(typedAction.functionCall.args) };
+          }
+
           return {
             type: 'FunctionCall' as const,
             params: {
               methodName: typedAction.functionCall.methodName,
-              args: typedAction.functionCall.args,
+              args,
               gas: typedAction.functionCall.gas.toString(),
               deposit: typedAction.functionCall.deposit.toString(),
             },

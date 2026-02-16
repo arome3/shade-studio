@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 import { initWalletSelector, trackWalletEvent } from '@/lib/near';
+import { captureSignMessageCallback } from '@/lib/near/sign-message-callback';
 
 interface WalletProviderProps {
   children: ReactNode;
@@ -30,6 +31,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
     // Prevent double initialization in StrictMode
     if (initAttempted.current) return;
     initAttempted.current = true;
+
+    // Capture sign-message callback params from URL hash before
+    // wallet selector init. MyNearWallet redirects back with
+    // #accountId=...&signature=...&publicKey=... after signing.
+    // This stores the result for useEncryption and cleans the URL.
+    captureSignMessageCallback();
 
     async function init() {
       try {

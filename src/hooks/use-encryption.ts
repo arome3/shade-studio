@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useEncryptionStore, type EncryptionStatus } from '@/stores/encryption-store';
 import { useWallet } from './use-wallet';
 import { type EncryptedPayload } from '@/types/document';
@@ -20,6 +20,7 @@ import {
   WalletNotConnectedForEncryptionError,
   UserRejectedSigningError,
 } from '@/lib/crypto';
+import { consumeSignMessageResult } from '@/lib/near/sign-message-callback';
 
 /**
  * File metadata returned with encrypted files.
@@ -78,10 +79,12 @@ export interface UseEncryptionReturn {
  *   };
  * }
  */
-export function useEncryption(): UseEncryptionReturn {
-  // Keys stored in ref for security (not in state/store)
-  const keysRef = useRef<DerivedKeys | null>(null);
+// Module-level key storage — shared across all useEncryption() instances.
+// Not in React state/store/ref so it's invisible to devtools and not serialized.
+// Cleared when lock() is called or the page unloads.
+let sharedKeys: DerivedKeys | null = null;
 
+export function useEncryption(): UseEncryptionReturn {
   // Get wallet state and actions
   const { isConnected, accountId, signMessage } = useWallet();
 
@@ -107,15 +110,35 @@ export function useEncryption(): UseEncryptionReturn {
     }
 
     // Check if already initialized for this account
-    if (status === 'ready' && keysRef.current && storeAccountId === accountId) {
+    if (status === 'ready' && sharedKeys && storeAccountId === accountId) {
       return; // Already initialized
     }
 
     try {
       setInitializing();
 
-      // Request signature from wallet
-      const signed = await signMessage(KEY_DERIVATION_MESSAGE);
+      // Check for a pending sign-message callback from a redirect wallet
+      // (e.g., MyNearWallet returns with signature in URL hash after redirect)
+      const callbackResult = consumeSignMessageResult();
+
+      let signed: { signature: string; publicKey: string; accountId: string };
+
+      if (callbackResult && callbackResult.accountId === accountId) {
+        // Use the captured callback result — no need to redirect again
+        signed = {
+          signature: callbackResult.signature,
+          publicKey: callbackResult.publicKey,
+          accountId: callbackResult.accountId,
+        };
+
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('[useEncryption] Using captured sign-message callback');
+        }
+      } else {
+        // Request signature from wallet (injected wallets resolve inline,
+        // redirect wallets will navigate away and return via callback)
+        signed = await signMessage(KEY_DERIVATION_MESSAGE);
+      }
 
       // Derive keys from signature
       const keys = deriveKeysFromSignature({
@@ -124,8 +147,8 @@ export function useEncryption(): UseEncryptionReturn {
         accountId: signed.accountId,
       });
 
-      // Store keys in ref (not in state!)
-      keysRef.current = keys;
+      // Store keys at module level (shared across all hook instances)
+      sharedKeys = keys;
 
       // Update store with safe metadata only
       setReady(keys.keyId, accountId);
@@ -135,9 +158,9 @@ export function useEncryption(): UseEncryptionReturn {
       }
     } catch (err) {
       // Clear any partial state
-      if (keysRef.current) {
-        clearDerivedKeys(keysRef.current);
-        keysRef.current = null;
+      if (sharedKeys) {
+        clearDerivedKeys(sharedKeys);
+        sharedKeys = null;
       }
 
       // Check for user rejection
@@ -172,15 +195,15 @@ export function useEncryption(): UseEncryptionReturn {
    */
   const encrypt = useCallback(
     async (data: string | object): Promise<EncryptedPayload> => {
-      if (!keysRef.current || status !== 'ready') {
+      if (!sharedKeys || status !== 'ready') {
         throw new EncryptionNotInitializedError();
       }
 
       try {
         if (typeof data === 'string') {
-          return encryptData(data, keysRef.current.secretKey);
+          return encryptData(data, sharedKeys.secretKey);
         } else {
-          return encryptJson(data, keysRef.current.secretKey);
+          return encryptJson(data, sharedKeys.secretKey);
         }
       } catch (err) {
         throw toEncryptionError(err);
@@ -195,13 +218,13 @@ export function useEncryption(): UseEncryptionReturn {
    */
   const decrypt = useCallback(
     async <T = string>(payload: EncryptedPayload): Promise<T> => {
-      if (!keysRef.current || status !== 'ready') {
+      if (!sharedKeys || status !== 'ready') {
         throw new EncryptionNotInitializedError();
       }
 
       try {
         // Try to decrypt as JSON first, fall back to string
-        const decrypted = decryptData(payload, keysRef.current.secretKey);
+        const decrypted = decryptData(payload, sharedKeys.secretKey);
         const text = new TextDecoder().decode(decrypted);
 
         // Try to parse as JSON
@@ -225,12 +248,12 @@ export function useEncryption(): UseEncryptionReturn {
     async (
       file: File
     ): Promise<{ payload: EncryptedPayload; metadata: FileMetadata }> => {
-      if (!keysRef.current || status !== 'ready') {
+      if (!sharedKeys || status !== 'ready') {
         throw new EncryptionNotInitializedError();
       }
 
       try {
-        return await encryptFile(file, keysRef.current.secretKey);
+        return await encryptFile(file, sharedKeys.secretKey);
       } catch (err) {
         throw toEncryptionError(err);
       }
@@ -243,12 +266,12 @@ export function useEncryption(): UseEncryptionReturn {
    */
   const decryptFileData = useCallback(
     async (payload: EncryptedPayload, metadata: FileMetadata): Promise<File> => {
-      if (!keysRef.current || status !== 'ready') {
+      if (!sharedKeys || status !== 'ready') {
         throw new EncryptionNotInitializedError();
       }
 
       try {
-        return await decryptFile(payload, metadata, keysRef.current.secretKey);
+        return await decryptFile(payload, metadata, sharedKeys.secretKey);
       } catch (err) {
         throw toEncryptionError(err);
       }
@@ -262,9 +285,9 @@ export function useEncryption(): UseEncryptionReturn {
    */
   const lock = useCallback(() => {
     // Securely clear keys
-    if (keysRef.current) {
-      clearDerivedKeys(keysRef.current);
-      keysRef.current = null;
+    if (sharedKeys) {
+      clearDerivedKeys(sharedKeys);
+      sharedKeys = null;
     }
 
     setLocked();

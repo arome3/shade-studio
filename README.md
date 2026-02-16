@@ -266,10 +266,10 @@ NEXT_PUBLIC_NEAR_CONTRACT_ID=private-grant-studio.testnet
 | `PINATA_SECRET_KEY` | IPFS pinning secret (Pinata) | — | ⬜ |
 | `NEXT_PUBLIC_IPFS_GATEWAY` | IPFS gateway URL | `https://gateway.pinata.cloud/ipfs` | ⬜ |
 | `NEXT_PUBLIC_ENCRYPTION_VERSION` | Encryption schema version | `1` | ⬜ |
-| `NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID` | ZK verifier contract | `zk-verifier.testnet` | ⬜ |
-| `NEXT_PUBLIC_ASYNC_AI_CONTRACT_ID` | Async AI processor contract | `async-ai.testnet` | ⬜ |
-| `NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID` | Shade Agent registry contract | `agent-registry.testnet` | ⬜ |
-| `NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID` | Grant registry contract | `grant-registry.testnet` | ⬜ |
+| `NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID` | ZK verifier contract | `zk-verifier.private-grant-studio.testnet` | ⬜ |
+| `NEXT_PUBLIC_ASYNC_AI_CONTRACT_ID` | Async AI processor contract | `async-ai.private-grant-studio.testnet` | ⬜ |
+| `NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID` | Shade Agent registry contract | `agent-registry.private-grant-studio.testnet` | ⬜ |
+| `NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID` | Grant registry contract | `grant-registry.private-grant-studio.testnet` | ⬜ |
 | `NEXT_PUBLIC_ENABLE_ZK_PROOFS` | Enable ZK credential features | `true` | ⬜ |
 | `NEXT_PUBLIC_ENABLE_AI_FEATURES` | Enable AI assistant features | `true` | ⬜ |
 | `NEXT_PUBLIC_ENABLE_DAILY_BRIEFINGS` | Enable daily intelligence briefings | `true` | ⬜ |
@@ -289,18 +289,21 @@ Four NEAR smart contracts written in Rust:
 
 | Contract | Directory | Testnet Account | Description |
 |----------|-----------|-----------------|-------------|
-| **ZK Verifier** | `contracts/zk-verifier/` | `zk-verifier.testnet` | On-chain Groth16 proof verification for ZK credentials |
-| **Async AI Processor** | `contracts/async-ai-processor/` | `async-ai.testnet` | Job queue with yield/resume for long-running AI tasks |
-| **Shade Agent Registry** | `contracts/shade-agent-registry/` | `agent-registry.testnet` | Agent registration with codehash verification and capabilities |
-| **Grant Registry** | `contracts/grant-registry/` | `grant-registry.testnet` | Ecosystem-wide grant program and application tracking |
+| **ZK Verifier** | `contracts/zk-verifier/` | `zk-verifier.private-grant-studio.testnet` | On-chain Groth16 proof verification for ZK credentials |
+| **Async AI Processor** | `contracts/async-ai-processor/` | `async-ai.private-grant-studio.testnet` | Job queue with yield/resume for long-running AI tasks |
+| **Shade Agent Registry** | `contracts/shade-agent-registry/` | `agent-registry.private-grant-studio.testnet` | Agent registration with codehash verification and capabilities |
+| **Grant Registry** | `contracts/grant-registry/` | `grant-registry.private-grant-studio.testnet` | Ecosystem-wide grant program and application tracking |
 
 ```bash
 # Build a contract
 cd contracts/zk-verifier
 ./build.sh
 
-# Deploy to testnet
-./deploy.sh
+# Deploy all contracts to testnet
+./scripts/deploy-contracts.sh testnet private-grant-studio.testnet
+
+# Upgrade a single contract
+./scripts/upgrade-contract.sh testnet zk-verifier zk-verifier.private-grant-studio.testnet
 ```
 
 ---

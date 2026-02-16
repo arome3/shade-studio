@@ -42,6 +42,9 @@ if (typeof window !== 'undefined') {
   }));
 }
 
+// Suppress logger noise during tests
+process.env.LOG_LEVEL ??= 'error';
+
 // Environment variable stubs — only set if not already defined
 process.env.NEXT_PUBLIC_NEAR_NETWORK ??= 'testnet';
 process.env.NEXT_PUBLIC_AI_ENDPOINT ??= 'https://api.test.near.ai';

@@ -246,7 +246,21 @@ export function useWallet(): UseWalletReturn {
         });
 
         if (!signedMessage) {
-          throw new Error('Signing returned null');
+          // Redirect-based wallets (MyNearWallet) return null because
+          // the actual signing happens on the external site after a
+          // full-page redirect. The result comes back as URL hash params
+          // when the wallet redirects back. This is not an error — just
+          // a pending operation that will complete after redirect.
+          trackWalletEvent({
+            type: 'sign_started',
+            accountId,
+            walletType: walletType ?? undefined,
+            metadata: { redirect: true },
+          });
+
+          // Return a never-resolving promise so the caller doesn't see
+          // an error while the browser is navigating away.
+          return new Promise<SignedMessage>(() => {});
         }
 
         trackWalletEvent({

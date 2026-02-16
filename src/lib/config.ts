@@ -89,6 +89,16 @@ const envSchema = z.object({
     .transform((v) => v === 'true')
     .default('true'),
 
+  // Monitoring (optional)
+  SENTRY_DSN: z.string().optional(),
+  NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+
+  // Analytics (optional)
+  NEXT_PUBLIC_GA_ID: z.string().optional(),
+
+  // Logging
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+
   // Development
   NEXT_PUBLIC_DEBUG_MODE: z
     .string()
@@ -122,6 +132,10 @@ function getEnv() {
     NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID: process.env.NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID,
     NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID: process.env.NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID,
     NEXT_PUBLIC_ENABLE_GRANT_REGISTRY: process.env.NEXT_PUBLIC_ENABLE_GRANT_REGISTRY,
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
+    LOG_LEVEL: process.env.LOG_LEVEL,
     NEXT_PUBLIC_DEBUG_MODE: process.env.NEXT_PUBLIC_DEBUG_MODE,
   });
 
@@ -193,6 +207,17 @@ export const config = {
     asyncAI: env.NEXT_PUBLIC_ENABLE_ASYNC_AI,
     shadeAgents: env.NEXT_PUBLIC_ENABLE_SHADE_AGENTS,
     grantRegistry: env.NEXT_PUBLIC_ENABLE_GRANT_REGISTRY,
+  },
+  monitoring: {
+    sentryDsn: env.SENTRY_DSN,
+    sentryDsnPublic: env.NEXT_PUBLIC_SENTRY_DSN,
+  },
+  analytics: {
+    gaId: env.NEXT_PUBLIC_GA_ID,
+    enabled: !!env.NEXT_PUBLIC_GA_ID,
+  },
+  logging: {
+    level: env.LOG_LEVEL,
   },
   debug: env.NEXT_PUBLIC_DEBUG_MODE,
 } as const;

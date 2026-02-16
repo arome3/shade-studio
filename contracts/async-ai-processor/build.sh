@@ -68,6 +68,25 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# NEAR VM compatibility: strip reference-types via WAT roundtrip
+# Rust 1.82+ emits reference-types WASM features that NEAR VM doesn't support.
+# Converting WASM → WAT → WASM re-encodes call_indirect in legacy format.
+# ---------------------------------------------------------------------------
+
+if command -v wasm2wat &>/dev/null && command -v wat2wasm &>/dev/null; then
+  echo "Stripping reference-types via WAT roundtrip..."
+  BEFORE=$(wc -c < out/async_ai_processor.wasm)
+  wasm2wat out/async_ai_processor.wasm -o out/async_ai_processor.wat
+  wat2wasm out/async_ai_processor.wat -o out/async_ai_processor.wasm
+  rm -f out/async_ai_processor.wat
+  AFTER=$(wc -c < out/async_ai_processor.wasm)
+  echo "  Before: $(human_size "$BEFORE") → After: $(human_size "$AFTER")"
+else
+  echo "WARNING: wabt (wasm2wat/wat2wasm) not found — WASM may not be NEAR VM compatible."
+  echo "  Install with: brew install wabt"
+fi
+
+# ---------------------------------------------------------------------------
 # wasm-opt optimization (if available)
 # ---------------------------------------------------------------------------
 

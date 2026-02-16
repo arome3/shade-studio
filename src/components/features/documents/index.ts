@@ -10,3 +10,4 @@ export { DocumentList, ViewModeToggle } from './document-list';
 export { DocumentCard } from './document-card';
 export { DocumentViewer } from './document-viewer';
 export { EncryptionStatus } from './encryption-status';
+export { DocumentVaultDashboard } from './document-vault-dashboard';

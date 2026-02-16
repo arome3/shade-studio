@@ -322,10 +322,14 @@ export async function getProjects(
 
     return projects;
   } catch (error) {
-    throw new SocialReadError(
-      `Failed to get projects for ${accountId}`,
-      error
-    );
+    // Return empty for missing data (new users with no projects yet)
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(
+        `[Social] No projects found for ${accountId} — returning empty`,
+        error
+      );
+    }
+    return {};
   }
 }
 
@@ -407,10 +411,14 @@ export async function getDocuments(
 
     return parseDocumentsData(documentsData) ?? {};
   } catch (error) {
-    throw new SocialReadError(
-      `Failed to get documents for project ${projectId}`,
-      error
-    );
+    // Return empty for missing data (new users with no documents stored yet)
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(
+        `[Social] No documents found for ${accountId}/${projectId} — returning empty`,
+        error
+      );
+    }
+    return {};
   }
 }
 
@@ -444,10 +452,13 @@ export async function getProposals(
 
     return parseProposalsData(proposalsData) ?? {};
   } catch (error) {
-    throw new SocialReadError(
-      `Failed to get proposals for project ${projectId}`,
-      error
-    );
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(
+        `[Social] No proposals found for ${projectId} — returning empty`,
+        error
+      );
+    }
+    return {};
   }
 }
 
@@ -475,10 +486,13 @@ export async function getSettings(
 
     return parseFromStorage<StoredUserSettings>(settings);
   } catch (error) {
-    throw new SocialReadError(
-      `Failed to get settings for ${accountId}`,
-      error
-    );
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(
+        `[Social] No settings found for ${accountId} — returning null`,
+        error
+      );
+    }
+    return null;
   }
 }
 
