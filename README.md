@@ -4,6 +4,10 @@
 
 **Privacy-first AI workspace for Web3 builders on NEAR Protocol**
 
+### [Watch the Demo (3 min)](https://youtu.be/7SnOKEmkP3k)
+
+[![Watch the Demo](https://img.shields.io/badge/%E2%96%B6%EF%B8%8F_WATCH_DEMO-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/7SnOKEmkP3k)
+
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](package.json)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license)
 [![NEAR](https://img.shields.io/badge/NEAR-Protocol-00C08B.svg?logo=near)](https://near.org)
