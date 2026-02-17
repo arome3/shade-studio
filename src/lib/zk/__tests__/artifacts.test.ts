@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   loadCircuitArtifacts,
   clearArtifactCache,
@@ -104,9 +104,13 @@ describe('Artifact Loading', () => {
   });
 
   describe('SHA256 integrity checks', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     // Helper to compute SHA-256 of an ArrayBuffer for test setup
     async function sha256hex(buffer: ArrayBuffer): Promise<string> {
-      const hash = await crypto.subtle.digest('SHA-256', buffer);
+      const hash = await crypto.subtle.digest('SHA-256', new Uint8Array(buffer));
       return Array.from(new Uint8Array(hash))
         .map((b) => b.toString(16).padStart(2, '0'))
         .join('');
@@ -160,8 +164,6 @@ describe('Artifact Loading', () => {
       const artifacts = await loadCircuitArtifacts('verified-builder');
       expect(artifacts.wasm).toBeInstanceOf(ArrayBuffer);
       expect(artifacts.vkey).toEqual(vkeyObj);
-
-      vi.restoreAllMocks();
     });
 
     it('throws ArtifactLoadError on hash mismatch', async () => {
@@ -186,8 +188,6 @@ describe('Artifact Loading', () => {
       await expect(
         loadCircuitArtifacts('verified-builder')
       ).rejects.toThrow('Integrity check failed');
-
-      vi.restoreAllMocks();
     });
 
     it('skips check when no hash configured', async () => {
