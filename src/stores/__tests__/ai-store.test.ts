@@ -26,7 +26,7 @@ describe('ai-store', () => {
     });
 
     it('should have default model', () => {
-      expect(useAIStore.getState().model).toBe('llama-3.3-70b-instruct');
+      expect(useAIStore.getState().model).toBe('deepseek-ai/DeepSeek-V3.1');
     });
 
     it('should have default temperature', () => {

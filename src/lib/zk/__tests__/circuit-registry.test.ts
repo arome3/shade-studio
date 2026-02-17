@@ -66,7 +66,7 @@ describe('Circuit Registry', () => {
   describe('circuit params', () => {
     it('verified-builder has maxDays and merkleDepth', () => {
       const config = getCircuitConfig('verified-builder');
-      expect(config.params.maxDays).toBe(365);
+      expect(config.params.maxDays).toBe(30);
       expect(config.params.merkleDepth).toBe(20);
     });
 

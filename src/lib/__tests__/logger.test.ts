@@ -149,6 +149,11 @@ describe('logger', () => {
         captureException: mockCaptureException,
       }));
 
+      // forwardToSentry only runs when a DSN is configured.
+      // In jsdom (window exists), it checks NEXT_PUBLIC_SENTRY_DSN.
+      const originalDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+      (process.env as Record<string, string | undefined>).NEXT_PUBLIC_SENTRY_DSN = 'https://fake@sentry.io/1';
+
       vi.spyOn(console, 'error').mockImplementation(() => {});
       const logger = getLogger();
 
@@ -165,6 +170,9 @@ describe('logger', () => {
           extra: { context: 'test' },
         })
       );
+
+      // Restore DSN
+      (process.env as Record<string, string | undefined>).NEXT_PUBLIC_SENTRY_DSN = originalDsn;
     });
 
     it('should gracefully no-op when Sentry is unavailable', () => {

@@ -36,7 +36,7 @@ describe('Input Preparation', () => {
   });
 
   describe('prepareVerifiedBuilderInputs', () => {
-    it('pads activityDates to maxDays (365)', async () => {
+    it('pads activityDates to maxDays (30)', async () => {
       const data: VerifiedBuilderData = {
         activityTimestamps: [1700000000, 1700086400, 1700172800],
         activityProofs: [
@@ -51,17 +51,17 @@ describe('Input Preparation', () => {
 
       const inputs = await prepareVerifiedBuilderInputs(data);
 
-      // Should pad to 365
-      expect(inputs.activityDates).toHaveLength(365);
+      // Should pad to 30
+      expect(inputs.activityDates).toHaveLength(30);
       // First 3 should be hashed values (mock returns string of input)
       expect(inputs.activityDates[0]).toBeTruthy();
       expect(inputs.activityDates[0]).not.toBe('0');
       // Remaining should be zero-padded
-      expect(inputs.activityDates[364]).toBe('0');
+      expect(inputs.activityDates[29]).toBe('0');
 
       // Merkle proofs should also be padded
-      expect(inputs.activityProofSiblings).toHaveLength(365);
-      expect(inputs.activityProofPathIndices).toHaveLength(365);
+      expect(inputs.activityProofSiblings).toHaveLength(30);
+      expect(inputs.activityProofPathIndices).toHaveLength(30);
       expect(inputs.activityProofSiblings[0]).toHaveLength(20);
 
       // Public inputs should pass through
@@ -80,7 +80,7 @@ describe('Input Preparation', () => {
       };
 
       const inputs = await prepareVerifiedBuilderInputs(data);
-      expect(inputs.activityDates).toHaveLength(365);
+      expect(inputs.activityDates).toHaveLength(30);
       expect(inputs.activityDates.every((d) => d === '0')).toBe(true);
     });
 

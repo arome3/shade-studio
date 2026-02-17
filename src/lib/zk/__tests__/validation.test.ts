@@ -4,11 +4,11 @@ import { InputValidationError } from '../errors';
 
 /** Helper to create a valid verified-builder input */
 function makeValidVerifiedBuilderInputs() {
-  const maxDays = 365;
+  const maxDays = 30;
   const merkleDepth = 20;
   return {
     activityRoot: '12345678901234567890',
-    minDays: 30,
+    minDays: 3,
     currentTimestamp: 1700000000,
     activityDates: Array(maxDays).fill('0'),
     activityProofSiblings: Array(maxDays).fill(Array(merkleDepth).fill('0')),
@@ -56,8 +56,8 @@ describe('Input Validation', () => {
     it('accepts valid inputs', () => {
       const inputs = makeValidVerifiedBuilderInputs();
       const result = validateCircuitInputs('verified-builder', inputs);
-      expect(result.minDays).toBe(30);
-      expect(result.activityDates).toHaveLength(365);
+      expect(result.minDays).toBe(3);
+      expect(result.activityDates).toHaveLength(30);
     });
 
     it('rejects missing activityRoot', () => {
@@ -86,7 +86,7 @@ describe('Input Validation', () => {
 
     it('rejects wrong array length for activityDates', () => {
       const inputs = makeValidVerifiedBuilderInputs();
-      inputs.activityDates = Array(10).fill('0'); // Not 365
+      inputs.activityDates = Array(10).fill('0'); // Not 30
       expect(() =>
         validateCircuitInputs('verified-builder', inputs)
       ).toThrow(InputValidationError);

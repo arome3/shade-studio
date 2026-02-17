@@ -48,14 +48,28 @@ vi.mock('../config', () => ({
   }),
 }));
 
+// ---------------------------------------------------------------------------
+// Helper: mock global fetch for read operations (socialGet uses fetch('/api/social'))
+// ---------------------------------------------------------------------------
+function mockFetchWithData(data: unknown) {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve(data),
+  }));
+}
+
 describe('NEAR Social Client', () => {
   beforeEach(() => {
     resetSocialClient();
     vi.clearAllMocks();
+    // Restore real fetch after each test (stubGlobal overrides it)
+    vi.unstubAllGlobals();
   });
 
   afterEach(() => {
     resetSocialClient();
+    vi.unstubAllGlobals();
   });
 
   describe('getSocialClient', () => {
@@ -210,7 +224,7 @@ describe('NEAR Social Client', () => {
   describe('Read Operations', () => {
     describe('getProjects', () => {
       it('should fetch and parse projects', async () => {
-        mockGet.mockResolvedValueOnce({
+        mockFetchWithData({
           'alice.near': {
             'private-grant-studio': {
               projects: {
@@ -232,22 +246,19 @@ describe('NEAR Social Client', () => {
 
         const projects = await getProjects('alice.near');
 
-        expect(mockGet).toHaveBeenCalledWith({
-          keys: ['alice.near/private-grant-studio/projects/**'],
-        });
         expect(projects).toHaveProperty('proj-1');
         expect(projects['proj-1']!.metadata.name).toBe('Project 1');
       });
 
       it('should return empty object when no projects exist', async () => {
-        mockGet.mockResolvedValueOnce({});
+        mockFetchWithData({});
 
         const projects = await getProjects('alice.near');
         expect(projects).toEqual({});
       });
 
       it('should skip invalid project data', async () => {
-        mockGet.mockResolvedValueOnce({
+        mockFetchWithData({
           'alice.near': {
             'private-grant-studio': {
               projects: {
@@ -279,7 +290,7 @@ describe('NEAR Social Client', () => {
 
     describe('getProject', () => {
       it('should fetch a single project', async () => {
-        mockGet.mockResolvedValueOnce({
+        mockFetchWithData({
           'alice.near': {
             'private-grant-studio': {
               projects: {
@@ -301,14 +312,11 @@ describe('NEAR Social Client', () => {
 
         const project = await getProject('alice.near', 'proj-1');
 
-        expect(mockGet).toHaveBeenCalledWith({
-          keys: ['alice.near/private-grant-studio/projects/proj-1/**'],
-        });
         expect(project?.metadata.name).toBe('Project 1');
       });
 
       it('should return null for non-existent project', async () => {
-        mockGet.mockResolvedValueOnce({});
+        mockFetchWithData({});
 
         const project = await getProject('alice.near', 'non-existent');
         expect(project).toBeNull();
@@ -317,7 +325,7 @@ describe('NEAR Social Client', () => {
 
     describe('getDocuments', () => {
       it('should fetch documents for a project', async () => {
-        mockGet.mockResolvedValueOnce({
+        mockFetchWithData({
           'alice.near': {
             'private-grant-studio': {
               projects: {
@@ -348,7 +356,7 @@ describe('NEAR Social Client', () => {
 
     describe('getProposals', () => {
       it('should fetch proposals for a project', async () => {
-        mockGet.mockResolvedValueOnce({
+        mockFetchWithData({
           'alice.near': {
             'private-grant-studio': {
               projects: {
@@ -377,7 +385,7 @@ describe('NEAR Social Client', () => {
 
     describe('getSettings', () => {
       it('should fetch user settings', async () => {
-        mockGet.mockResolvedValueOnce({
+        mockFetchWithData({
           'alice.near': {
             'private-grant-studio': {
               settings: JSON.stringify({
@@ -395,7 +403,7 @@ describe('NEAR Social Client', () => {
       });
 
       it('should return null when no settings exist', async () => {
-        mockGet.mockResolvedValueOnce({});
+        mockFetchWithData({});
 
         const settings = await getSettings('alice.near');
         expect(settings).toBeNull();
@@ -463,10 +471,10 @@ describe('NEAR Social Client', () => {
         expect(mockSet).toHaveBeenCalled();
         expect(transaction).toBe(mockTransaction);
 
-        // Verify the data sets project to null
+        // Verify the data sets project to empty string (NEAR Social convention for deletion)
         const setCall = mockSet.mock.calls[0]![0];
         const projectData = setCall.data['alice.near']['private-grant-studio']['projects']['proj-1'];
-        expect(projectData).toBeNull();
+        expect(projectData).toBe('');
       });
     });
   });

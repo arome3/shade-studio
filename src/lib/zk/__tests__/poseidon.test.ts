@@ -4,21 +4,22 @@ import { poseidonHash, poseidonHashString, resetPoseidon } from '../poseidon';
 // Mock circomlibjs since WASM isn't available in test
 vi.mock('circomlibjs', () => ({
   buildPoseidon: vi.fn(async () => {
-    // Deterministic mock: hash is the concatenation of input strings
-    const mockPoseidon = (...inputs: bigint[]) => {
+    // Deterministic mock: poseidon.ts calls poseidon.hash(inputs) where inputs is bigint[]
+    // So the mock function receives a single array argument.
+    const mockPoseidon = (inputs: bigint[]) => {
       // Produce a deterministic "hash" by summing and mixing
       let hash = BigInt(0);
       for (const input of inputs) {
-        // Simple mixing: multiply by a prime and XOR
+        // Simple mixing: multiply by a prime and add
         hash = (hash * BigInt(31) + input) % BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617');
       }
-      // Return as Uint8Array (mock)
+      // Return as Uint8Array (mock of field element)
       return new Uint8Array([Number(hash % BigInt(256))]);
     };
 
     mockPoseidon.F = {
       toString: (_val: Uint8Array, _radix?: number) => {
-        // For testing, return a deterministic string based on the byte
+        // For testing, return a deterministic decimal string based on the byte
         return _val[0]?.toString() ?? '0';
       },
       toObject: (val: Uint8Array) => BigInt(val[0] ?? 0),
