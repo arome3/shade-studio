@@ -20,7 +20,9 @@ const MAX_POSEIDON_INPUTS = 16;
 /** Maximum string byte length we support: 16 chunks × 31 bytes = 496 */
 const MAX_STRING_BYTES = MAX_BYTES_PER_FIELD * MAX_POSEIDON_INPUTS;
 
-type PoseidonFn = (...inputs: bigint[]) => Uint8Array;
+// circomlibjs poseidon accepts an array of bigint-like values
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PoseidonFn = (inputs: any[]) => Uint8Array;
 
 interface PoseidonHasher {
   hash: PoseidonFn;
@@ -44,11 +46,11 @@ export async function getPoseidon(): Promise<PoseidonHasher> {
   const poseidon = await circomlibjs.buildPoseidon();
 
   poseidonInstance = {
-    hash: poseidon,
+    hash: poseidon as unknown as PoseidonFn,
     F: poseidon.F,
   };
 
-  return poseidonInstance;
+  return poseidonInstance!;
 }
 
 /**
@@ -60,7 +62,8 @@ export async function getPoseidon(): Promise<PoseidonHasher> {
  */
 export async function poseidonHash(inputs: bigint[]): Promise<string> {
   const poseidon = await getPoseidon();
-  const hash = poseidon.hash(...inputs);
+  // circomlibjs poseidon expects an array, NOT spread arguments
+  const hash = poseidon.hash(inputs);
   return poseidon.F.toString(hash, 10);
 }
 

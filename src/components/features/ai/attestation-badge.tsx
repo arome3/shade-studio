@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Shield,
   ShieldCheck,
@@ -28,6 +28,7 @@ import {
   TooltipProvider,
 } from '@/components/ui/tooltip';
 import { useAttestation } from '@/hooks/use-attestation';
+import { verifyAttestation } from '@/lib/ai/attestation';
 import type { NEARAIAttestation } from '@/types/ai';
 import { AttestationDetails } from '@/components/features/attestation';
 
@@ -61,10 +62,15 @@ export function AttestationBadge({
   useEnhancedView = false,
 }: AttestationBadgeProps) {
   const [copied, setCopied] = useState(false);
-  const { verify, getDescription, getBadge, getVerificationUrl } =
+  const { getDescription, getBadge, getVerificationUrl } =
     useAttestation();
 
-  const result = verify(attestation);
+  // Verify as a pure computation — NOT via the hook's verify() which calls
+  // setState and would cause an infinite re-render loop when called during render.
+  const result = useMemo(
+    () => verifyAttestation(attestation),
+    [attestation]
+  );
   const badge = getBadge(result);
   const teeInfo = getDescription(attestation.tee_type);
   const verificationUrl = getVerificationUrl(attestation);

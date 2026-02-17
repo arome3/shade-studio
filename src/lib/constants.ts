@@ -44,7 +44,7 @@ export const ZK_CIRCUIT_NAMES = [
 /** Circuit-specific parameters used for input validation and array sizing */
 export const ZK_CIRCUIT_PARAMS = {
   'verified-builder': {
-    maxDays: 365,
+    maxDays: 30,
     merkleDepth: 20,
   },
   'grant-track-record': {
@@ -105,8 +105,8 @@ export const IPFS_CONSTANTS = {
   CONTENT_STORE: 'ipfs-cache',
   /** Metadata store name */
   METADATA_STORE: 'metadata-cache',
-  /** CID validation regex for both CIDv0 (Qm...) and CIDv1 (bafy...) */
-  CID_REGEX: /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|bafy[a-zA-Z0-9]{55,})$/,
+  /** CID validation regex for CIDv0 (Qm...) and CIDv1 (bafy.../bafk...) */
+  CID_REGEX: /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z][a-zA-Z0-9]{48,})$/,
 } as const;
 
 // NEAR Social paths

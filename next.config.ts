@@ -88,7 +88,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",  // unsafe-eval for snarkjs WASM, unsafe-inline for Next.js React bootstrap
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",  // Tailwind + Google Fonts
               "img-src 'self' data: https://gateway.pinata.cloud https://ipfs.io",
-              "connect-src 'self' https://rpc.testnet.near.org https://rpc.mainnet.near.org https://archival-rpc.testnet.near.org https://archival-rpc.mainnet.near.org https://api.near.ai https://api.pinata.cloud",
+              "connect-src 'self' https://rpc.testnet.near.org https://rpc.mainnet.near.org https://archival-rpc.testnet.near.org https://archival-rpc.mainnet.near.org https://api.near.social https://api.near.ai https://api.pinata.cloud",
               "font-src 'self' https://fonts.gstatic.com",
               "frame-ancestors 'self'",
             ].join('; '),

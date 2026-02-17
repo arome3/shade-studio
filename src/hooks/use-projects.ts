@@ -200,7 +200,9 @@ export function useProjects(): UseProjectsReturn {
 
   /**
    * Sign and send a transaction via the wallet.
-   * Converts NAJ-format actions (from near-social-js) to Wallet Selector format.
+   * Converts NAJ-format actions (from near-social-js) to a dual-format object
+   * that works with both v8.x wallets (MyNearWallet — reads `type`/`params`)
+   * and v10.x wallets (Meteor — reads `functionCall` via `najActionToInternal`).
    */
   const signAndSendTransaction = useCallback(
     async (transaction: { receiverId: string; actions: unknown[] }) => {
@@ -227,24 +229,32 @@ export function useProjects(): UseProjectsReturn {
             throw new Error('Invalid action type');
           }
 
-          // Decode Uint8Array args back to a JSON object.
-          // near-social-js encodes the args as JSON bytes, but the
-          // Wallet Selector expects a plain object (it re-encodes internally).
-          let args: Record<string, unknown>;
+          const { methodName, args: rawArgs, gas, deposit } = typedAction.functionCall;
+
+          // Decode Uint8Array args to JSON object for v8.x wallets
+          let decodedArgs: Record<string, unknown>;
           try {
-            const argsJson = new TextDecoder().decode(typedAction.functionCall.args);
-            args = JSON.parse(argsJson);
+            decodedArgs = JSON.parse(new TextDecoder().decode(rawArgs));
           } catch {
-            args = { data: Array.from(typedAction.functionCall.args) };
+            decodedArgs = { data: Array.from(rawArgs) };
           }
 
+          // Dual-format action: both property styles on one object.
+          // - v8 wallets (MyNearWallet) use `switch(action.type)` → reads `type`/`params`
+          // - v10 wallets (Meteor) use `if(action.functionCall)` → reads `functionCall`
           return {
             type: 'FunctionCall' as const,
             params: {
-              methodName: typedAction.functionCall.methodName,
-              args,
-              gas: typedAction.functionCall.gas.toString(),
-              deposit: typedAction.functionCall.deposit.toString(),
+              methodName,
+              args: decodedArgs,
+              gas: gas.toString(),
+              deposit: deposit.toString(),
+            },
+            functionCall: {
+              methodName,
+              args: rawArgs,
+              gas,
+              deposit,
             },
           };
         }),

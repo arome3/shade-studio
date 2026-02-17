@@ -60,6 +60,10 @@ template TeamAttestation(maxAttestations, depth) {
     signal validCount[maxAttestations + 1];
     validCount[0] <== 0;
 
+    component msgHash[maxAttestations];
+    component pubKeyHash[maxAttestations];
+    signal rootDiff[maxAttestations];
+
     for (var i = 0; i < maxAttestations; i++) {
         // Check if this slot has an attestation (non-zero pub key X)
         isNonZero[i] = IsNonZero();
@@ -67,9 +71,9 @@ template TeamAttestation(maxAttestations, depth) {
 
         // Verify EdDSA Poseidon signature
         // The message includes the credential type to bind attestation to purpose
-        component msgHash = Poseidon(2);
-        msgHash.inputs[0] <== attestationMessages[i];
-        msgHash.inputs[1] <== credentialType;
+        msgHash[i] = Poseidon(2);
+        msgHash[i].inputs[0] <== attestationMessages[i];
+        msgHash[i].inputs[1] <== credentialType;
 
         eddsaVerify[i] = EdDSAPoseidonVerifier();
         eddsaVerify[i].enabled <== isNonZero[i].out;
@@ -78,25 +82,24 @@ template TeamAttestation(maxAttestations, depth) {
         eddsaVerify[i].R8x <== signatureR8X[i];
         eddsaVerify[i].R8y <== signatureR8Y[i];
         eddsaVerify[i].S <== signatureS[i];
-        eddsaVerify[i].M <== msgHash.out;
+        eddsaVerify[i].M <== msgHash[i].out;
 
         // Hash public key to create leaf for attester tree
-        component pubKeyHash = Poseidon(2);
-        pubKeyHash.inputs[0] <== attesterPubKeyX[i];
-        pubKeyHash.inputs[1] <== attesterPubKeyY[i];
+        pubKeyHash[i] = Poseidon(2);
+        pubKeyHash[i].inputs[0] <== attesterPubKeyX[i];
+        pubKeyHash[i].inputs[1] <== attesterPubKeyY[i];
 
         // Verify attester is in the recognized set via Merkle proof
         attesterMerkle[i] = MerkleRoot(depth);
-        attesterMerkle[i].leaf <== pubKeyHash.out;
+        attesterMerkle[i].leaf <== pubKeyHash[i].out;
         for (var j = 0; j < depth; j++) {
             attesterMerkle[i].pathElements[j] <== attesterPathElements[i][j];
             attesterMerkle[i].pathIndices[j] <== attesterPathIndices[i][j];
         }
 
         // If attestation is non-zero, Merkle root must match
-        signal rootDiff;
-        rootDiff <== attesterMerkle[i].root - attestersRoot;
-        isNonZero[i].out * rootDiff === 0;
+        rootDiff[i] <== attesterMerkle[i].root - attestersRoot;
+        isNonZero[i].out * rootDiff[i] === 0;
 
         // Count valid attestation
         validCount[i + 1] <== validCount[i] + isNonZero[i].out;

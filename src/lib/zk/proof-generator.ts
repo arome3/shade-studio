@@ -102,8 +102,9 @@ export function isProofExpired(proof: ZKProof): boolean {
 /** Rough constraint-based time estimate (ms). */
 export function estimateProofTime(circuitId: ZKCircuit): number {
   const config = getCircuitConfig(circuitId);
-  // ~1ms per 10 constraints is a rough browser estimate
-  return Math.max(1000, Math.ceil(config.estimatedConstraints / 10) * 1);
+  // Browser Groth16 proving: ~0.5ms per constraint (WASM, single-threaded).
+  // Node.js is ~5x faster, so browser estimate = Node time * 5.
+  return Math.max(5000, Math.ceil(config.estimatedConstraints * 0.5));
 }
 
 // ---------------------------------------------------------------------------

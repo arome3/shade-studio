@@ -32,6 +32,7 @@ import {
   listTemplates,
   getMyAgents,
   verifyAgent,
+  registerTemplate,
   AgentRegistryError,
   AgentNotFoundError,
 } from '@/lib/agents/registry-client';
@@ -44,6 +45,7 @@ import {
 } from '@/lib/agents/shade-agent';
 import {
   getOrphanedDeployments,
+  removeOrphanedDeployment,
   recoverOrphanedDeployment,
   cleanupOrphanedDeployment,
   type OrphanedDeployment,
@@ -55,6 +57,7 @@ import type {
   AgentInstance,
   AgentInvocation,
   AgentVerificationResult,
+  AgentCapability,
 } from '@/types/agents';
 
 // ============================================================================
@@ -114,6 +117,22 @@ export interface UseShadeAgentReturn {
   deactivate: (agentAccountId: string) => Promise<boolean>;
   recoverOrphanedDeploy: (agentAccountId: string) => Promise<AgentInstance | null>;
   cleanupOrphanedDeploy: (agentAccountId: string) => Promise<boolean>;
+  dismissOrphanedDeploy: (agentAccountId: string) => void;
+  registerNewTemplate: (input: {
+    id: string;
+    name: string;
+    description: string;
+    version: string;
+    codehash: string;
+    sourceUrl: string;
+    capabilities: AgentCapability[];
+    requiredPermissions: Array<{
+      receiverId: string;
+      methodNames: string[];
+      allowance: string;
+      purpose: string;
+    }>;
+  }) => Promise<boolean>;
   refreshTemplates: () => Promise<void>;
   refreshMyAgents: () => Promise<void>;
   clearError: () => void;
@@ -127,6 +146,7 @@ export function useShadeAgent(): UseShadeAgentReturn {
   const { accountId, isConnected } = useWallet();
   const { encrypt } = useEncryption();
   const [isDeploying, setIsDeploying] = useState(false);
+  const [orphanVersion, setOrphanVersion] = useState(0);
   const hasFetchedRef = useRef(false);
   const invokeAbortRef = useRef<AbortController | null>(null);
 
@@ -140,6 +160,7 @@ export function useShadeAgent(): UseShadeAgentReturn {
   const setTemplates = useAgentStore((s) => s.setTemplates);
   const setInstances = useAgentStore((s) => s.setInstances);
   const addInstance = useAgentStore((s) => s.addInstance);
+  const addTemplate = useAgentStore((s) => s.addTemplate);
   const updateInstance = useAgentStore((s) => s.updateInstance);
   const setActiveAgent = useAgentStore((s) => s.setActiveAgent);
   const activeAgentId = useAgentStore((s) => s.activeAgentId);
@@ -168,17 +189,33 @@ export function useShadeAgent(): UseShadeAgentReturn {
     ? (instancesRecord[activeAgentId] ?? null)
     : null;
 
-  // Orphaned deployments for current user
+  // Orphaned deployments for current user — filter out any whose agent
+  // is already registered on-chain (fetched into instancesRecord).
+  // orphanVersion forces re-read from localStorage after manual dismissal.
   const orphanedDeploys = useMemo(() => {
     if (!accountId) return [];
-    return getOrphanedDeployments(accountId);
-  }, [accountId]);
+    return getOrphanedDeployments(accountId).filter(
+      (o) => !instancesRecord[o.agentAccountId]
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId, instancesRecord, orphanVersion]);
 
   // Key health for the active agent
   const keyHealth = useMemo(() => {
     if (!activeAgentId) return null;
     return getKeyHealth(activeAgentId);
   }, [activeAgentId]);
+
+  // Auto-clean orphan manifests for agents that are already registered on-chain
+  useEffect(() => {
+    if (!accountId) return;
+    const allOrphans = getOrphanedDeployments(accountId);
+    for (const orphan of allOrphans) {
+      if (instancesRecord[orphan.agentAccountId]) {
+        removeOrphanedDeployment(orphan.agentAccountId);
+      }
+    }
+  }, [accountId, instancesRecord]);
 
   // --------------------------------------------------------------------------
   // Refresh actions
@@ -450,6 +487,71 @@ export function useShadeAgent(): UseShadeAgentReturn {
     [accountId, setStoreError]
   );
 
+  const dismissOrphanedDeploy = useCallback(
+    (agentAccountId: string) => {
+      removeOrphanedDeployment(agentAccountId);
+      setOrphanVersion((v) => v + 1);
+    },
+    []
+  );
+
+  // --------------------------------------------------------------------------
+  // Register template
+  // --------------------------------------------------------------------------
+
+  const registerNewTemplate = useCallback(
+    async (input: {
+      id: string;
+      name: string;
+      description: string;
+      version: string;
+      codehash: string;
+      sourceUrl: string;
+      capabilities: AgentCapability[];
+      requiredPermissions: Array<{
+        receiverId: string;
+        methodNames: string[];
+        allowance: string;
+        purpose: string;
+      }>;
+    }): Promise<boolean> => {
+      const selector = getWalletSelector();
+      if (!selector || !accountId) return false;
+
+      try {
+        await registerTemplate(input, selector);
+
+        // Optimistic update — add to store immediately
+        addTemplate({
+          id: input.id,
+          name: input.name,
+          description: input.description,
+          version: input.version,
+          codehash: input.codehash,
+          sourceUrl: input.sourceUrl,
+          creator: accountId,
+          capabilities: input.capabilities,
+          requiredPermissions: input.requiredPermissions.map((p) => ({
+            receiverId: p.receiverId,
+            methodNames: p.methodNames,
+            allowance: p.allowance,
+            purpose: p.purpose,
+          })),
+          createdAt: new Date().toISOString(),
+          deployments: 0,
+          isAudited: false,
+        });
+
+        return true;
+      } catch (err) {
+        const msg = classifyHookError(err, 'Failed to register template');
+        setStoreError(msg);
+        return false;
+      }
+    },
+    [accountId, addTemplate, setStoreError]
+  );
+
   // --------------------------------------------------------------------------
   // Error management
   // --------------------------------------------------------------------------
@@ -476,6 +578,8 @@ export function useShadeAgent(): UseShadeAgentReturn {
     deactivate: deactivateAction,
     recoverOrphanedDeploy,
     cleanupOrphanedDeploy,
+    dismissOrphanedDeploy,
+    registerNewTemplate,
     refreshTemplates,
     refreshMyAgents,
     clearError,

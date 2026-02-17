@@ -58,6 +58,11 @@ template GrantTrackRecord(maxGrants, grantDepth, programDepth) {
     signal completedCount[maxGrants + 1];
     completedCount[0] <== 0;
 
+    signal isCompleted[maxGrants];
+    component grantLeafHash[maxGrants];
+    signal grantRootDiff[maxGrants];
+    signal programRootDiff[maxGrants];
+
     for (var i = 0; i < maxGrants; i++) {
         // Check if this slot has a grant (non-zero)
         isNonZero[i] = IsNonZero();
@@ -67,27 +72,25 @@ template GrantTrackRecord(maxGrants, grantDepth, programDepth) {
         completionFlags[i] * (1 - completionFlags[i]) === 0;
 
         // A grant counts as completed if it exists AND is marked complete
-        signal isCompleted;
-        isCompleted <== isNonZero[i].out * completionFlags[i];
-        completedCount[i + 1] <== completedCount[i] + isCompleted;
+        isCompleted[i] <== isNonZero[i].out * completionFlags[i];
+        completedCount[i + 1] <== completedCount[i] + isCompleted[i];
 
         // Hash grant ID + completion flag as the leaf
-        component grantLeafHash = Poseidon(2);
-        grantLeafHash.inputs[0] <== grantIds[i];
-        grantLeafHash.inputs[1] <== completionFlags[i];
+        grantLeafHash[i] = Poseidon(2);
+        grantLeafHash[i].inputs[0] <== grantIds[i];
+        grantLeafHash[i].inputs[1] <== completionFlags[i];
 
         // Verify grant Merkle proof
         grantMerkle[i] = MerkleRoot(grantDepth);
-        grantMerkle[i].leaf <== grantLeafHash.out;
+        grantMerkle[i].leaf <== grantLeafHash[i].out;
         for (var j = 0; j < grantDepth; j++) {
             grantMerkle[i].pathElements[j] <== grantPathElements[i][j];
             grantMerkle[i].pathIndices[j] <== grantPathIndices[i][j];
         }
 
         // If grant is non-zero, its root must match
-        signal grantRootDiff;
-        grantRootDiff <== grantMerkle[i].root - grantRoot;
-        isNonZero[i].out * grantRootDiff === 0;
+        grantRootDiff[i] <== grantMerkle[i].root - grantRoot;
+        isNonZero[i].out * grantRootDiff[i] === 0;
 
         // Verify program Merkle proof
         programMerkle[i] = MerkleRoot(programDepth);
@@ -98,9 +101,8 @@ template GrantTrackRecord(maxGrants, grantDepth, programDepth) {
         }
 
         // If grant is non-zero, program root must match
-        signal programRootDiff;
-        programRootDiff <== programMerkle[i].root - programsRoot;
-        isNonZero[i].out * programRootDiff === 0;
+        programRootDiff[i] <== programMerkle[i].root - programsRoot;
+        isNonZero[i].out * programRootDiff[i] === 0;
     }
 
     // Padding constraints (Fix #6):

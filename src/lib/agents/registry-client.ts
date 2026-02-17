@@ -247,19 +247,26 @@ async function callFunction(
   contractId: string = DEFAULT_CONTRACT_ID
 ): Promise<unknown> {
   const wallet = await walletSelector.wallet();
+  const argsBytes = new TextEncoder().encode(JSON.stringify(args));
+  // Dual-format action: v8 wallets read type/params, v10 wallets (Meteor) read functionCall
+  const action = {
+    type: 'FunctionCall' as const,
+    params: {
+      methodName: method,
+      args,
+      gas,
+      deposit,
+    },
+    functionCall: {
+      methodName: method,
+      args: argsBytes,
+      gas: BigInt(gas),
+      deposit: BigInt(deposit),
+    },
+  };
   const outcome = await wallet.signAndSendTransaction({
     receiverId: contractId,
-    actions: [
-      {
-        type: 'FunctionCall',
-        params: {
-          methodName: method,
-          args: new TextEncoder().encode(JSON.stringify(args)),
-          gas,
-          deposit,
-        },
-      },
-    ],
+    actions: [action as unknown as { type: 'FunctionCall'; params: typeof action.params }],
   });
   return outcome;
 }
@@ -448,6 +455,55 @@ export async function getRegistryStats(
 // ---------------------------------------------------------------------------
 // Change calls (require wallet)
 // ---------------------------------------------------------------------------
+
+/** 80 TGas for register_template */
+const REGISTER_TEMPLATE_GAS = '80000000000000';
+
+/** Register a new agent template on-chain. */
+export async function registerTemplate(
+  input: {
+    id: string;
+    name: string;
+    description: string;
+    version: string;
+    codehash: string;
+    sourceUrl: string;
+    auditUrl?: string;
+    capabilities: AgentCapability[];
+    requiredPermissions: Array<{
+      receiverId: string;
+      methodNames: string[];
+      allowance: string;
+      purpose: string;
+    }>;
+  },
+  walletSelector: WalletSelector,
+  contractId?: string
+): Promise<void> {
+  await callFunction(
+    walletSelector,
+    'register_template',
+    {
+      id: input.id,
+      name: input.name,
+      description: input.description,
+      version: input.version,
+      codehash: input.codehash,
+      source_url: input.sourceUrl,
+      audit_url: input.auditUrl || null,
+      capabilities: input.capabilities,
+      required_permissions: input.requiredPermissions.map((p) => ({
+        receiver_id: p.receiverId,
+        method_names: p.methodNames,
+        allowance: p.allowance,
+        purpose: p.purpose,
+      })),
+    },
+    REGISTER_TEMPLATE_GAS,
+    '0',
+    contractId
+  );
+}
 
 /** Register a deployed agent instance on-chain. */
 export async function registerAgentInstance(

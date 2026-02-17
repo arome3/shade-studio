@@ -3,7 +3,5 @@ node_modules
 .git
 contracts/**/target
 coverage
-*.wasm
-*.zkey
 *.ptau
 e2e

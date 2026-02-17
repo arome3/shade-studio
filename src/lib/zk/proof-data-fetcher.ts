@@ -14,6 +14,8 @@ import type {
   TeamAttestationData,
 } from './input-preparation';
 import { ZKError } from './errors';
+import { ZK_CIRCUIT_PARAMS } from '@/lib/constants';
+import { getPoseidon } from './poseidon';
 
 // ============================================================================
 // Config
@@ -43,24 +45,99 @@ export class DataFetchError extends ZKError {
 // Mock Data (development / testing)
 // ============================================================================
 
-function generateMockBuilderData(minDays: number): VerifiedBuilderData {
+/**
+ * Build a sparse Poseidon Merkle tree and return proofs.
+ *
+ * Optimization: precompute "zero subtree" hashes for each level so we only
+ * hash nodes with at least one non-zero descendant. For 10 leaves in a
+ * depth-20 tree this reduces work from ~1M hashes to ~200 hashes.
+ */
+async function buildPoseidonMerkleTree(
+  leaves: bigint[],
+  depth: number
+): Promise<{ root: string; proofs: { siblings: string[]; pathIndices: number[] }[] }> {
+  const poseidon = await getPoseidon();
+  const F = poseidon.F;
+
+  // Precompute zero subtree hashes: zeroH[0] = 0, zeroH[d+1] = Poseidon(zeroH[d], zeroH[d])
+  const zeroH: bigint[] = [BigInt(0)];
+  for (let d = 0; d < depth; d++) {
+    const raw = poseidon.hash([zeroH[d]!, zeroH[d]!]);
+    zeroH.push(F.toObject(raw));
+  }
+
+  // Sparse tree: Map<nodeIndex, value> per level
+  // Level 0 = leaves, level `depth` = root
+  const levels: Map<number, bigint>[] = Array.from({ length: depth + 1 }, () => new Map());
+
+  // Set real leaves
+  for (let i = 0; i < leaves.length; i++) {
+    levels[0]!.set(i, leaves[i]!);
+  }
+
+  // Build tree bottom-up — only compute nodes that differ from the zero default
+  for (let d = 0; d < depth; d++) {
+    const curr = levels[d]!;
+    const next = levels[d + 1]!;
+    // Find parent indices that need computation
+    const parentIndices = new Set<number>();
+    for (const idx of curr.keys()) {
+      parentIndices.add(Math.floor(idx / 2));
+    }
+    for (const pi of parentIndices) {
+      const left = curr.get(pi * 2) ?? zeroH[d]!;
+      const right = curr.get(pi * 2 + 1) ?? zeroH[d]!;
+      const raw = poseidon.hash([left, right]);
+      next.set(pi, F.toObject(raw));
+    }
+  }
+
+  const root = (levels[depth]!.get(0) ?? zeroH[depth]!).toString();
+
+  // Extract proofs for each real leaf
+  const proofs = leaves.map((_, leafIdx) => {
+    const siblings: string[] = [];
+    const pathIndices: number[] = [];
+    let idx = leafIdx;
+    for (let d = 0; d < depth; d++) {
+      const sibIdx = idx % 2 === 0 ? idx + 1 : idx - 1;
+      const sib = levels[d]!.get(sibIdx) ?? zeroH[d]!;
+      siblings.push(sib.toString());
+      pathIndices.push(idx % 2);
+      idx = Math.floor(idx / 2);
+    }
+    return { siblings, pathIndices };
+  });
+
+  return { root, proofs };
+}
+
+async function generateMockBuilderData(minDays: number): Promise<VerifiedBuilderData> {
   const now = Math.floor(Date.now() / 1000);
   const dayInSecs = 86400;
+  const { maxDays, merkleDepth } = ZK_CIRCUIT_PARAMS['verified-builder'];
+  const count = Math.min(Math.max(minDays + 5, 10), maxDays);
+
   const timestamps: number[] = [];
-  for (let i = 0; i < Math.max(minDays + 5, 35); i++) {
+  for (let i = 0; i < count; i++) {
     timestamps.push(now - i * dayInSecs);
   }
 
-  // Mock Merkle proofs with depth 20
-  const mockProof = {
-    siblings: new Array(20).fill('12345678901234567890'),
-    pathIndices: new Array(20).fill(0),
-  };
+  // Poseidon-hash each timestamp (matching what input-preparation.ts will do)
+  const poseidon = await getPoseidon();
+  const F = poseidon.F;
+  const hashedLeaves: bigint[] = timestamps.map((ts) => {
+    const raw = poseidon.hash([BigInt(ts)]);
+    return F.toObject(raw);
+  });
+
+  // Build real Merkle tree and extract proofs
+  const { root, proofs } = await buildPoseidonMerkleTree(hashedLeaves, merkleDepth);
 
   return {
     activityTimestamps: timestamps,
-    activityProofs: timestamps.map(() => ({ ...mockProof })),
-    activityRoot: '9876543210987654321098765432109876543210',
+    activityProofs: proofs,
+    activityRoot: root,
     minDays,
     currentTimestamp: now,
   };
@@ -152,7 +229,7 @@ export async function fetchVerifiedBuilderData(
   signal?: AbortSignal
 ): Promise<VerifiedBuilderData> {
   if (USE_MOCK_DATA) {
-    return generateMockBuilderData(minDays);
+    return await generateMockBuilderData(minDays);
   }
 
   try {

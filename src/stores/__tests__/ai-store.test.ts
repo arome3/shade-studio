@@ -136,8 +136,8 @@ describe('ai-store', () => {
     });
 
     it('should set model', () => {
-      useAIStore.getState().setModel('llama-3.1-8b-instruct');
-      expect(useAIStore.getState().model).toBe('llama-3.1-8b-instruct');
+      useAIStore.getState().setModel('Qwen/Qwen3-30B-A3B-Instruct-2507');
+      expect(useAIStore.getState().model).toBe('Qwen/Qwen3-30B-A3B-Instruct-2507');
     });
 
     it('should set temperature', () => {

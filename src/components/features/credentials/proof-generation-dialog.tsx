@@ -38,7 +38,7 @@ const DEFAULT_THRESHOLDS: Record<ZKCircuit, number> = {
 };
 
 const THRESHOLD_LABELS: Record<ZKCircuit, { label: string; unit: string; max: number }> = {
-  'verified-builder': { label: 'Minimum Active Days', unit: 'days', max: 365 },
+  'verified-builder': { label: 'Minimum Active Days', unit: 'days', max: 30 },
   'grant-track-record': { label: 'Minimum Completed Grants', unit: 'grants', max: 50 },
   'team-attestation': { label: 'Minimum Attestations', unit: 'attestations', max: 20 },
 };
@@ -293,7 +293,7 @@ export function ProofGenerationDialog({
         <DialogHeader>
           <DialogTitle>Generating Proof</DialogTitle>
           <DialogDescription>
-            This may take a moment depending on the circuit complexity.
+            This may take up to a minute. The page may briefly freeze during computation.
           </DialogDescription>
         </DialogHeader>
 

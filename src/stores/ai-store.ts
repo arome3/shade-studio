@@ -103,7 +103,7 @@ const initialState: AIState = {
   error: null,
   persona: 'grantWriter',
   contextDocumentIds: [],
-  model: 'llama-3.3-70b-instruct',
+  model: 'deepseek-ai/DeepSeek-V3.1',
   temperature: 0.7,
   conversationHistory: {},
   activeConversationId: null,
@@ -347,6 +347,7 @@ export const useAIStore = create<AIState & AIActions>()(
       }),
       {
         name: 'ai-store',
+        version: 1,
         // Only persist settings, not messages (for privacy)
         partialize: (state) => ({
           persona: state.persona,
@@ -355,6 +356,21 @@ export const useAIStore = create<AIState & AIActions>()(
           // Persist conversation history (user can clear it)
           conversationHistory: state.conversationHistory,
         }),
+        // Migrate stale model IDs from retired NEAR AI catalog
+        migrate: (persisted, version) => {
+          const state = persisted as Record<string, unknown>;
+          if (version === 0) {
+            const validModels = new Set([
+              'deepseek-ai/DeepSeek-V3.1',
+              'Qwen/Qwen3-30B-A3B-Instruct-2507',
+              'openai/gpt-oss-120b',
+            ]);
+            if (state.model && !validModels.has(state.model as string)) {
+              state.model = 'deepseek-ai/DeepSeek-V3.1';
+            }
+          }
+          return state;
+        },
       }
     ),
     {

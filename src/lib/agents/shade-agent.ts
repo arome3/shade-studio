@@ -185,11 +185,17 @@ async function deployAgentInner(
       },
       walletSelector
     );
+  } catch (err) {
+    // Orphan manifest already saved — user can recover later
+    throw new AgentDeployError(
+      `Agent sub-account created but registration failed. ` +
+      `Use the recovery tool to complete setup. Error: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
+  }
 
-    // Update orphan manifest for key storage step
-    saveOrphanedDeployment({ ...orphanManifest, failedStep: 'key-storage' });
-
-    // 8. Store encrypted keys
+  // 8. Store encrypted keys (non-fatal — agent works without stored keys
+  // since parent account has implicit access to the sub-account)
+  try {
     const ownerEncrypted = await encrypt(ownerKeyPair.secretKey);
     storeAgentKey({
       agentAccountId,
@@ -207,16 +213,17 @@ async function deployAgentInner(
       encryptedPrivateKey: execEncrypted.encrypted,
       nonce: execEncrypted.nonce,
     });
-
-    // 9. Success — remove orphan manifest
-    removeOrphanedDeployment(agentAccountId);
-  } catch (err) {
-    // Orphan manifest already saved — user can recover later
-    throw new AgentDeployError(
-      `Agent sub-account created but registration failed. ` +
-      `Use the recovery tool to complete setup. Error: ${err instanceof Error ? err.message : 'Unknown error'}`
-    );
+  } catch {
+    // Key storage failed (e.g. encryption not initialized).
+    // Agent is still registered and functional — parent account has
+    // implicit access to the sub-account on NEAR.
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[Agent] Key encryption skipped — encryption not initialized');
+    }
   }
+
+  // 9. Success — remove orphan manifest
+  removeOrphanedDeployment(agentAccountId);
 
   // 10. Return instance
   return {
@@ -236,30 +243,30 @@ async function deployAgentInner(
  * Build wallet actions for creating an agent sub-account.
  */
 function buildAgentDeployActions(
-  ownerPublicKey: string,
+  _ownerPublicKey: string,
   executionPublicKey: string,
   depositNear: string,
   permissions: { receiverId: string; methodNames: string[]; allowance: string }[],
   template: AgentTemplate,
 ): WalletAction[] {
+  const depositYocto = nearToYocto(depositNear);
+
+  // Dual-format actions: v8 wallets read type/params, v10 wallets (Meteor)
+  // read NAJ-format properties (createAccount, transfer, addKey, etc.)
+  // Note: We skip adding a FullAccess owner key because Meteor Wallet blocks
+  // transactions containing FullAccess keys as a security measure. The parent
+  // account (e.g. alice.testnet) already has implicit access to its sub-accounts
+  // (e.g. agent.alice.testnet) on NEAR Protocol, so this is safe.
   const actions: WalletAction[] = [
-    { type: 'CreateAccount' },
+    { type: 'CreateAccount', createAccount: {} },
     {
       type: 'Transfer',
-      params: { deposit: nearToYocto(depositNear) },
-    },
-    // Owner key — FullAccess
-    {
-      type: 'AddKey',
-      params: {
-        publicKey: ownerPublicKey,
-        accessKey: { permission: 'FullAccess' },
-      },
+      params: { deposit: depositYocto },
+      transfer: { deposit: depositYocto },
     },
   ];
 
   // Execution key — FunctionCall with aggregated permissions
-  // Use the first permission's receiverId or the registry contract as default
   if (permissions.length > 0) {
     const perm = permissions[0]!;
     actions.push({
@@ -274,9 +281,22 @@ function buildAgentDeployActions(
           },
         },
       },
+      addKey: {
+        publicKey: executionPublicKey,
+        accessKey: {
+          nonce: 0,
+          permission: {
+            functionCall: {
+              receiverId: perm.receiverId,
+              methodNames: perm.methodNames,
+              allowance: perm.allowance,
+            },
+          },
+        },
+      },
     });
   } else {
-    // Default: FunctionCall key limited to the registry contract
+    const defaultAllowance = nearToYocto('0.25');
     actions.push({
       type: 'AddKey',
       params: {
@@ -285,7 +305,20 @@ function buildAgentDeployActions(
           permission: {
             receiverId: template.id,
             methodNames: [],
-            allowance: nearToYocto('0.25'),
+            allowance: defaultAllowance,
+          },
+        },
+      },
+      addKey: {
+        publicKey: executionPublicKey,
+        accessKey: {
+          nonce: 0,
+          permission: {
+            functionCall: {
+              receiverId: template.id,
+              methodNames: [],
+              allowance: defaultAllowance,
+            },
           },
         },
       },

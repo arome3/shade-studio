@@ -68,22 +68,22 @@ const envSchema = z.object({
   // ZK
   NEXT_PUBLIC_ZK_VERIFIER_CONTRACT_ID: z
     .string()
-    .default('zk-verifier.testnet'),
+    .default('zk-verifier.private-grant-studio.testnet'),
 
   // Async AI
   NEXT_PUBLIC_ASYNC_AI_CONTRACT_ID: z
     .string()
-    .default('async-ai.testnet'),
+    .default('async-ai.private-grant-studio.testnet'),
 
   // Shade Agents
   NEXT_PUBLIC_AGENT_REGISTRY_CONTRACT_ID: z
     .string()
-    .default('agent-registry.testnet'),
+    .default('agent-registry.private-grant-studio.testnet'),
 
   // Grant Registry
   NEXT_PUBLIC_GRANT_REGISTRY_CONTRACT_ID: z
     .string()
-    .default('grant-registry.testnet'),
+    .default('grant-registry.private-grant-studio.testnet'),
   NEXT_PUBLIC_ENABLE_GRANT_REGISTRY: z
     .string()
     .transform((v) => v === 'true')

@@ -17,6 +17,7 @@ import { useShadeAgent } from '@/hooks/use-shade-agent';
 import { AgentCard } from './agent-card';
 import { TemplateCard } from './template-card';
 import { DeployAgentDialog } from './deploy-agent-dialog';
+import { RegisterTemplateDialog } from './register-template-dialog';
 
 // ---------------------------------------------------------------------------
 // Component
@@ -38,7 +39,8 @@ export function AgentDashboard() {
     cancelInvocation,
     deactivate,
     recoverOrphanedDeploy,
-    cleanupOrphanedDeploy,
+    dismissOrphanedDeploy,
+    registerNewTemplate,
     refreshTemplates,
     refreshMyAgents,
     clearError,
@@ -46,6 +48,7 @@ export function AgentDashboard() {
 
   const [deployDialogOpen, setDeployDialogOpen] = useState(false);
   const [deployTemplateId, setDeployTemplateId] = useState<string | undefined>();
+  const [registerTemplateOpen, setRegisterTemplateOpen] = useState(false);
   const [recoveringId, setRecoveringId] = useState<string | null>(null);
 
   // --------------------------------------------------------------------------
@@ -106,16 +109,11 @@ export function AgentDashboard() {
     [recoverOrphanedDeploy]
   );
 
-  const handleCleanup = useCallback(
-    async (agentAccountId: string) => {
-      setRecoveringId(agentAccountId);
-      try {
-        await cleanupOrphanedDeploy(agentAccountId);
-      } finally {
-        setRecoveringId(null);
-      }
+  const handleDismissOrphan = useCallback(
+    (agentAccountId: string) => {
+      dismissOrphanedDeploy(agentAccountId);
     },
-    [cleanupOrphanedDeploy]
+    [dismissOrphanedDeploy]
   );
 
   // --------------------------------------------------------------------------
@@ -231,6 +229,10 @@ export function AgentDashboard() {
               <RefreshCw className="h-4 w-4" />
             )}
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setRegisterTemplateOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Template
+          </Button>
           <Button size="sm" onClick={() => handleOpenDeploy()}>
             <Plus className="h-4 w-4 mr-1" />
             Deploy Agent
@@ -267,11 +269,10 @@ export function AgentDashboard() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-[10px] text-error"
-                      disabled={recoveringId === orphan.agentAccountId}
-                      onClick={() => handleCleanup(orphan.agentAccountId)}
+                      className="h-6 text-[10px] text-text-muted"
+                      onClick={() => handleDismissOrphan(orphan.agentAccountId)}
                     >
-                      Delete
+                      Dismiss
                     </Button>
                   </div>
                 </div>
@@ -377,6 +378,13 @@ export function AgentDashboard() {
         templates={templates}
         initialTemplateId={deployTemplateId}
         onDeploy={handleDeploy}
+      />
+
+      {/* Register Template Dialog */}
+      <RegisterTemplateDialog
+        open={registerTemplateOpen}
+        onOpenChange={setRegisterTemplateOpen}
+        onRegister={registerNewTemplate}
       />
     </div>
   );

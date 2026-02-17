@@ -314,22 +314,22 @@ export interface AttestationVerificationResult {
 /** Available AI models on NEAR AI Cloud */
 export const AI_MODELS = [
   {
-    id: 'llama-3.3-70b-instruct',
-    name: 'Llama 3.3 70B',
-    provider: 'Meta',
+    id: 'deepseek-ai/DeepSeek-V3.1',
+    name: 'DeepSeek V3.1',
+    provider: 'DeepSeek',
     description: 'Large, powerful model for complex tasks',
   },
   {
-    id: 'llama-3.1-8b-instruct',
-    name: 'Llama 3.1 8B',
-    provider: 'Meta',
+    id: 'Qwen/Qwen3-30B-A3B-Instruct-2507',
+    name: 'Qwen 3 30B',
+    provider: 'Alibaba',
     description: 'Fast, efficient model for quick responses',
   },
   {
-    id: 'qwen-2.5-72b-instruct',
-    name: 'Qwen 2.5 72B',
-    provider: 'Alibaba',
-    description: 'Multilingual model with strong reasoning',
+    id: 'openai/gpt-oss-120b',
+    name: 'GPT OSS 120B',
+    provider: 'OpenAI',
+    description: 'Open-source GPT model with strong reasoning',
   },
 ] as const;
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Plus, Wallet, AlertCircle } from 'lucide-react';
+import { Plus, Wallet, AlertCircle, Download } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -16,6 +16,8 @@ import { ProofGenerationDialog } from './proof-generation-dialog';
 import { StoreOnChainDialog } from './store-on-chain-dialog';
 import { ShareCredentialDialog } from './share-credential-dialog';
 import { CredentialDetailDialog } from './credential-detail-dialog';
+import { useProofStore } from '@/stores/proof-store';
+import type { ZKProof } from '@/types/zk';
 import type { UICredential } from '@/types/credentials';
 
 // ============================================================================
@@ -93,6 +95,25 @@ export function CredentialsDashboard() {
     },
     [credentials]
   );
+
+  const [demoLoading, setDemoLoading] = useState(false);
+  const handleLoadDemo = useCallback(async () => {
+    setDemoLoading(true);
+    try {
+      const resp = await fetch('/demo-proof.json');
+      if (!resp.ok) throw new Error('Demo proof not found');
+      const data = await resp.json() as ZKProof;
+      // Avoid duplicates — check if this proof ID is already in the store
+      const existing = useProofStore.getState().proofs[data.id];
+      if (!existing) {
+        useProofStore.getState().addProof(data);
+      }
+    } catch (err) {
+      console.error('Failed to load demo proof:', err);
+    } finally {
+      setDemoLoading(false);
+    }
+  }, []);
 
   // -------------------------------------------------------------------------
   // Guard cascade
@@ -184,10 +205,20 @@ export function CredentialsDashboard() {
                 Privacy-preserving proofs of your on-chain activity
               </p>
             </div>
-            <Button onClick={() => setGenerateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Credential
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleLoadDemo}
+                disabled={demoLoading}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {demoLoading ? 'Loading...' : 'Load Demo'}
+              </Button>
+              <Button onClick={() => setGenerateOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Credential
+              </Button>
+            </div>
           </div>
         </div>
 

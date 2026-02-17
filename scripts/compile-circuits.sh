@@ -50,7 +50,8 @@ for circuit in "${CIRCUITS[@]}"; do
         --wasm \
         --sym \
         --output "$output_dir" \
-        -l node_modules
+        -l node_modules \
+        -l .
 
     echo "  R1CS: $output_dir/$circuit.r1cs"
     echo "  WASM: $output_dir/${circuit}_js/${circuit}.wasm"

@@ -148,6 +148,28 @@ export function resetSocialClient(): void {
 }
 
 /**
+ * Read data from NEAR Social via server-side proxy.
+ * Avoids CORS issues by routing through /api/social.
+ *
+ * @param keys - Array of NEAR Social key patterns
+ * @returns Parsed response data
+ */
+async function socialGet(keys: string[]): Promise<Record<string, unknown>> {
+  const response = await fetch('/api/social', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keys }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || `Social API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
  * Build the path for a project in NEAR Social.
  *
  * @param accountId - The account ID
@@ -279,11 +301,9 @@ export function extractNestedData<T>(
 export async function getProjects(
   accountId: string
 ): Promise<Record<string, SocialProjectData>> {
-  const social = getSocialClient();
-
   try {
     const keys = [`${accountId}/${APP_NAMESPACE}/projects/**`];
-    const response = await social.get({ keys });
+    const response = await socialGet(keys);
 
     const projectsData = extractNestedData<Record<string, Record<string, unknown>>>(
       response,
@@ -344,11 +364,9 @@ export async function getProject(
   accountId: string,
   projectId: string
 ): Promise<SocialProjectData | null> {
-  const social = getSocialClient();
-
   try {
     const keys = [`${accountId}/${APP_NAMESPACE}/projects/${projectId}/**`];
-    const response = await social.get({ keys });
+    const response = await socialGet(keys);
 
     const projectData = extractNestedData<Record<string, unknown>>(
       response,
@@ -392,13 +410,12 @@ export async function getDocuments(
   accountId: string,
   projectId: string
 ): Promise<Record<string, StoredDocumentMetadata>> {
-  const social = getSocialClient();
-
   try {
     const keys = [
       `${accountId}/${APP_NAMESPACE}/projects/${projectId}/documents/**`,
     ];
-    const response = await social.get({ keys });
+
+    const response = await socialGet(keys);
 
     const documentsData = extractNestedData<Record<string, unknown>>(
       response,
@@ -413,8 +430,8 @@ export async function getDocuments(
   } catch (error) {
     // Return empty for missing data (new users with no documents stored yet)
     if (process.env.NODE_ENV === 'development') {
-      console.debug(
-        `[Social] No documents found for ${accountId}/${projectId} — returning empty`,
+      console.error(
+        `[Social] getDocuments FAILED for ${accountId}/${projectId}:`,
         error
       );
     }
@@ -433,13 +450,11 @@ export async function getProposals(
   accountId: string,
   projectId: string
 ): Promise<Record<string, StoredProposalMetadata>> {
-  const social = getSocialClient();
-
   try {
     const keys = [
       `${accountId}/${APP_NAMESPACE}/projects/${projectId}/proposals/**`,
     ];
-    const response = await social.get({ keys });
+    const response = await socialGet(keys);
 
     const proposalsData = extractNestedData<Record<string, unknown>>(
       response,
@@ -471,11 +486,9 @@ export async function getProposals(
 export async function getSettings(
   accountId: string
 ): Promise<StoredUserSettings | null> {
-  const social = getSocialClient();
-
   try {
     const keys = [`${accountId}/${APP_NAMESPACE}/settings`];
-    const response = await social.get({ keys });
+    const response = await socialGet(keys);
 
     const settings = extractNestedData<unknown>(
       response,
@@ -705,7 +718,7 @@ export async function buildDeleteProjectTransaction(
         [account.accountId]: {
           [APP_NAMESPACE]: {
             projects: {
-              [projectId]: null,
+              [projectId]: '',
             },
           },
         },
@@ -734,6 +747,9 @@ export async function buildDeleteDocumentTransaction(
   const social = getSocialClient();
 
   try {
+    // Use empty string as deletion marker instead of null.
+    // near-social-js's parseKeysFromData crashes on null (typeof null === 'object'
+    // so Object.entries(null) throws). Empty strings are filtered out when reading.
     const transaction = await social.set({
       account: {
         accountID: account.accountId,
@@ -745,7 +761,7 @@ export async function buildDeleteDocumentTransaction(
             projects: {
               [projectId]: {
                 documents: {
-                  [documentId]: null,
+                  [documentId]: '',
                 },
               },
             },
@@ -787,7 +803,7 @@ export async function buildDeleteProposalTransaction(
             projects: {
               [projectId]: {
                 proposals: {
-                  [proposalId]: null,
+                  [proposalId]: '',
                 },
               },
             },

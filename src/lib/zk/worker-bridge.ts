@@ -6,7 +6,7 @@
  * - workerVerify(): runs snarkjs.groth16.verify in a worker thread
  * - Synthetic time-based progress estimation (caps at 90% until done)
  * - Abort / cancellation via AbortSignal
- * - SSR fallback: falls back to main-thread snarkjs when Worker is unavailable
+ * - Automatic fallback to main-thread when Worker fails or times out
  */
 
 import { nanoid } from 'nanoid';
@@ -30,10 +30,22 @@ export interface WorkerFullProveOptions {
 // ---------------------------------------------------------------------------
 
 let worker: Worker | null = null;
+/**
+ * Worker disabled: Next.js webpack doesn't reliably bundle dynamic imports
+ * inside Web Workers (snarkjs import hangs in dev and often in production).
+ * Main-thread proving works fine — the UI freezes for ~30-60s but completes.
+ */
+let workerHealthy = false;
 
-function getOrCreateWorker(): Worker {
+function getOrCreateWorker(): Worker | null {
+  if (!workerHealthy) return null;
   if (!worker) {
-    worker = new Worker(new URL('./proof-worker.ts', import.meta.url));
+    try {
+      worker = new Worker(new URL('./proof-worker.ts', import.meta.url));
+    } catch {
+      workerHealthy = false;
+      return null;
+    }
   }
   return worker;
 }
@@ -50,7 +62,7 @@ function terminateWorker(): void {
 // ---------------------------------------------------------------------------
 
 function isWorkerAvailable(): boolean {
-  return typeof Worker !== 'undefined';
+  return typeof Worker !== 'undefined' && workerHealthy;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,7 +72,10 @@ function isWorkerAvailable(): boolean {
 /**
  * Run Groth16 fullProve in a Web Worker with synthetic progress.
  *
- * Falls back to main-thread snarkjs in SSR / environments without Worker.
+ * Falls back to main-thread snarkjs if:
+ * - Worker is not available (SSR)
+ * - Worker fails to respond within timeout (estimatedMs * 3)
+ * - Worker errors out
  */
 export function workerFullProve(
   circuitSignals: Record<string, unknown>,
@@ -68,16 +83,30 @@ export function workerFullProve(
   zkey: ArrayBuffer,
   options: WorkerFullProveOptions = {}
 ): Promise<{ proof: object; publicSignals: string[] }> {
-  const { signal, onProgress, estimatedMs = 5000 } = options;
+  const { signal, onProgress, estimatedMs = 60000 } = options;
 
   // SSR fallback — run on main thread
   if (!isWorkerAvailable()) {
-    return mainThreadFullProve(circuitSignals, wasm, zkey, signal);
+    return mainThreadFullProveWithProgress(
+      circuitSignals, wasm, zkey, signal, onProgress, estimatedMs
+    );
   }
 
   return new Promise((resolve, reject) => {
     const id = nanoid(8);
-    const w = getOrCreateWorker();
+    const maybeWorker = getOrCreateWorker();
+
+    // Worker creation failed — fall back to main thread
+    if (!maybeWorker) {
+      resolve(
+        mainThreadFullProveWithProgress(
+          circuitSignals, wasm, zkey, signal, onProgress, estimatedMs
+        )
+      );
+      return;
+    }
+
+    const w = maybeWorker;
 
     // --- Synthetic progress ---
     let progressTimer: ReturnType<typeof setInterval> | null = null;
@@ -89,14 +118,32 @@ export function workerFullProve(
         const elapsed = Date.now() - startTime;
         const percent = Math.min(90, Math.round((elapsed / estimatedMs) * 90));
         onProgress(percent);
-      }, 200);
+      }, 500);
     }
+
+    // --- Timeout: fall back to main thread if worker is unresponsive ---
+    const timeoutMs = Math.max(estimatedMs * 3, 180_000); // at least 3 minutes
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      signal?.removeEventListener('abort', onAbort);
+      w.removeEventListener('message', onMessage);
+      w.removeEventListener('error', onError);
+      terminateWorker();
+      workerHealthy = false;
+      console.warn('[ZK] Worker timed out, falling back to main thread');
+      resolve(
+        mainThreadFullProveWithProgress(
+          circuitSignals, wasm, zkey, signal, onProgress, estimatedMs
+        )
+      );
+    }, timeoutMs);
 
     function cleanup() {
       if (progressTimer !== null) {
         clearInterval(progressTimer);
         progressTimer = null;
       }
+      clearTimeout(timeoutId);
     }
 
     // --- Abort handling ---
@@ -118,6 +165,22 @@ export function workerFullProve(
 
     signal?.addEventListener('abort', onAbort, { once: true });
 
+    // --- Error handler ---
+    function onError(event: ErrorEvent) {
+      cleanup();
+      signal?.removeEventListener('abort', onAbort);
+      w.removeEventListener('message', onMessage);
+      w.removeEventListener('error', onError);
+      terminateWorker();
+      workerHealthy = false;
+      console.warn('[ZK] Worker error, falling back to main thread:', event.message);
+      resolve(
+        mainThreadFullProveWithProgress(
+          circuitSignals, wasm, zkey, signal, onProgress, estimatedMs
+        )
+      );
+    }
+
     // --- Message handler ---
     function onMessage(event: MessageEvent<WorkerResponse>) {
       const msg = event.data;
@@ -125,26 +188,30 @@ export function workerFullProve(
 
       signal?.removeEventListener('abort', onAbort);
       w.removeEventListener('message', onMessage);
+      w.removeEventListener('error', onError);
       cleanup();
 
       if (msg.type === 'fullProve:result') {
         onProgress?.(100);
         resolve({ proof: msg.proof, publicSignals: msg.publicSignals });
       } else if (msg.type === 'fullProve:error') {
-        reject(new Error(msg.error));
+        // Worker reported an error — fall back to main thread
+        console.warn('[ZK] Worker proof error, falling back to main thread:', msg.error);
+        workerHealthy = false;
+        terminateWorker();
+        resolve(
+          mainThreadFullProveWithProgress(
+            circuitSignals, wasm, zkey, signal, onProgress, estimatedMs
+          )
+        );
       }
     }
 
     w.addEventListener('message', onMessage);
+    w.addEventListener('error', onError);
 
-    // --- Send to worker (transfer buffers for zero-copy) ---
-    const wasmCopy = wasm.slice(0);
-    const zkeyCopy = zkey.slice(0);
-
-    w.postMessage(
-      { type: 'fullProve', id, circuitSignals, wasm: wasmCopy, zkey: zkeyCopy },
-      [wasmCopy, zkeyCopy]
-    );
+    // --- Send to worker ---
+    w.postMessage({ type: 'fullProve', id, circuitSignals, wasm, zkey });
   });
 }
 
@@ -155,7 +222,7 @@ export function workerFullProve(
 /**
  * Run Groth16 verify in a Web Worker.
  *
- * Falls back to main-thread snarkjs in SSR / environments without Worker.
+ * Falls back to main-thread snarkjs when Worker is unavailable.
  */
 export function workerVerify(
   vkey: object,
@@ -169,7 +236,14 @@ export function workerVerify(
 
   return new Promise((resolve, reject) => {
     const id = nanoid(8);
-    const w = getOrCreateWorker();
+    const maybeW = getOrCreateWorker();
+
+    if (!maybeW) {
+      resolve(mainThreadVerify(vkey, publicSignals, proof));
+      return;
+    }
+
+    const w = maybeW;
 
     function onAbort() {
       terminateWorker();
@@ -187,17 +261,27 @@ export function workerVerify(
 
     signal?.addEventListener('abort', onAbort, { once: true });
 
+    // Timeout for verification (should be fast)
+    const timeoutId = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      w.removeEventListener('message', onMessage);
+      terminateWorker();
+      resolve(mainThreadVerify(vkey, publicSignals, proof));
+    }, 30_000);
+
     function onMessage(event: MessageEvent<WorkerResponse>) {
       const msg = event.data;
       if (msg.id !== id) return;
 
+      clearTimeout(timeoutId);
       signal?.removeEventListener('abort', onAbort);
       w.removeEventListener('message', onMessage);
 
       if (msg.type === 'verify:result') {
         resolve(msg.isValid);
       } else if (msg.type === 'verify:error') {
-        reject(new Error(msg.error));
+        // Fall back to main thread
+        resolve(mainThreadVerify(vkey, publicSignals, proof));
       }
     }
 
@@ -208,7 +292,7 @@ export function workerVerify(
 }
 
 // ---------------------------------------------------------------------------
-// Main-thread fallbacks (SSR / test environments)
+// Main-thread implementations
 // ---------------------------------------------------------------------------
 
 async function mainThreadFullProve(
@@ -231,6 +315,40 @@ async function mainThreadFullProve(
   );
 
   return { proof, publicSignals };
+}
+
+/**
+ * Main-thread fullProve with synthetic progress reporting.
+ */
+async function mainThreadFullProveWithProgress(
+  circuitSignals: Record<string, unknown>,
+  wasm: ArrayBuffer,
+  zkey: ArrayBuffer,
+  signal?: AbortSignal,
+  onProgress?: (percent: number) => void,
+  estimatedMs = 60000
+): Promise<{ proof: object; publicSignals: string[] }> {
+  const startTime = Date.now();
+  let progressTimer: ReturnType<typeof setInterval> | null = null;
+
+  if (onProgress) {
+    onProgress(0);
+    progressTimer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const percent = Math.min(90, Math.round((elapsed / estimatedMs) * 90));
+      onProgress(percent);
+    }, 500);
+  }
+
+  try {
+    const result = await mainThreadFullProve(circuitSignals, wasm, zkey, signal);
+    onProgress?.(100);
+    return result;
+  } finally {
+    if (progressTimer !== null) {
+      clearInterval(progressTimer);
+    }
+  }
 }
 
 async function mainThreadVerify(

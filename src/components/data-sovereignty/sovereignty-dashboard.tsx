@@ -24,6 +24,7 @@ import { ActivityLog } from './activity-log';
 import { PrivacySettingsPanel } from './privacy-settings';
 import { ExportDialog } from './export-dialog';
 import { DeleteDialog } from './delete-dialog';
+import { CredentialsDashboard } from '@/components/features/credentials';
 
 // ============================================================================
 // Component
@@ -245,6 +246,7 @@ export function SovereigntyDashboard() {
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="inventory">Inventory</TabsTrigger>
+              <TabsTrigger value="credentials">Credentials</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="privacy">Privacy</TabsTrigger>
             </TabsList>
@@ -283,6 +285,12 @@ export function SovereigntyDashboard() {
                   onExport={handleExportAll}
                   onDelete={handleDeleteSelected}
                 />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="credentials">
+              <div className="mt-4">
+                <CredentialsDashboard />
               </div>
             </TabsContent>
 

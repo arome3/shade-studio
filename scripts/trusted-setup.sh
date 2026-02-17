@@ -12,12 +12,12 @@ set -euo pipefail
 
 BUILD_DIR="build/circuits"
 PTAU_DIR="build/ptau"
-PTAU_FILE="$PTAU_DIR/powersOfTau28_hez_final_16.ptau"
+PTAU_FILE="$PTAU_DIR/powersOfTau28_hez_final_21.ptau"
 CIRCUITS=("verified-builder" "grant-track-record" "team-attestation")
-SNARKJS="npx snarkjs"
+SNARKJS="node --max-old-space-size=8192 node_modules/.bin/snarkjs"
 
-# Powers of Tau — 2^16 supports up to ~65K constraints
-PTAU_URL="https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_16.ptau"
+# Powers of Tau — 2^21 supports up to ~2M constraints (needed for verified-builder's ~1.87M)
+PTAU_URL="https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_21.ptau"
 
 echo "=== Groth16 Trusted Setup ==="
 

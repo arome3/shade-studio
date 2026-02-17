@@ -16,12 +16,12 @@ const CIRCUIT_REGISTRY: Record<ZKCircuit, CircuitConfig> = {
     name: 'Verified Builder',
     description:
       'Proves activity history (minimum active days) without revealing specific actions or dates.',
-    version: '1.0.0',
+    version: '2.0.0',
     params: {
       maxDays: ZK_CIRCUIT_PARAMS['verified-builder'].maxDays,
       merkleDepth: ZK_CIRCUIT_PARAMS['verified-builder'].merkleDepth,
     },
-    estimatedConstraints: 10_000,
+    estimatedConstraints: 146_000,
     wasmPath: `${ZK_ARTIFACTS_BASE_PATH}/verified-builder.wasm`,
     zkeyPath: `${ZK_ARTIFACTS_BASE_PATH}/verified-builder.zkey`,
     vkeyPath: `${ZK_ARTIFACTS_BASE_PATH}/verified-builder.vkey.json`,

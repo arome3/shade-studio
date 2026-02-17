@@ -49,8 +49,8 @@ export interface ChatOptions {
 
 /** Default configuration */
 const DEFAULT_CONFIG: Required<NEARAIClientConfig> = {
-  baseUrl: process.env.NEXT_PUBLIC_NEAR_AI_API_URL || 'https://api.near.ai',
-  defaultModel: 'llama-3.3-70b-instruct',
+  baseUrl: process.env.NEXT_PUBLIC_NEAR_AI_API_URL || 'https://cloud-api.near.ai',
+  defaultModel: 'deepseek-ai/DeepSeek-V3.1',
   defaultTemperature: 0.7,
   timeout: 60000,
 };

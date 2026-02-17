@@ -243,19 +243,26 @@ async function callFunction(
   contractId: string = DEFAULT_CONTRACT_ID
 ): Promise<unknown> {
   const wallet = await walletSelector.wallet();
+  const argsBytes = new TextEncoder().encode(JSON.stringify(args));
+  // Dual-format action: v8 wallets read type/params, v10 wallets (Meteor) read functionCall
+  const action = {
+    type: 'FunctionCall' as const,
+    params: {
+      methodName: method,
+      args,
+      gas,
+      deposit,
+    },
+    functionCall: {
+      methodName: method,
+      args: argsBytes,
+      gas: BigInt(gas),
+      deposit: BigInt(deposit),
+    },
+  };
   const outcome = await wallet.signAndSendTransaction({
     receiverId: contractId,
-    actions: [
-      {
-        type: 'FunctionCall',
-        params: {
-          methodName: method,
-          args: new TextEncoder().encode(JSON.stringify(args)),
-          gas,
-          deposit,
-        },
-      },
-    ],
+    actions: [action as unknown as { type: 'FunctionCall'; params: typeof action.params }],
   });
   return outcome;
 }

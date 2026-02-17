@@ -14,6 +14,7 @@
 
 import type { WalletSelector } from '@near-wallet-selector/core';
 import type { AIJob, AIJobType, AIJobParams } from '@/types/async-ai';
+import type { NEARAIAttestation } from '@/types/ai';
 import { config } from '@/lib/config';
 import { getNetworkConfig } from '@/lib/near/config';
 
@@ -266,19 +267,29 @@ async function callFunction(
   contractId: string = DEFAULT_CONTRACT_ID
 ): Promise<unknown> {
   const wallet = await walletSelector.wallet();
+  const argsBytes = new TextEncoder().encode(JSON.stringify(args));
+
+  // Dual-format action: both property styles on one object.
+  // - v8 wallets (MyNearWallet) use `switch(action.type)` → reads `type`/`params`
+  // - v10 wallets (Meteor) use `if(action.functionCall)` → reads `functionCall`
+  const action = {
+    type: 'FunctionCall' as const,
+    params: {
+      methodName: method,
+      args,
+      gas,
+      deposit,
+    },
+    functionCall: {
+      methodName: method,
+      args: argsBytes,
+      gas: BigInt(gas),
+      deposit: BigInt(deposit),
+    },
+  };
   const outcome = await wallet.signAndSendTransaction({
     receiverId: contractId,
-    actions: [
-      {
-        type: 'FunctionCall',
-        params: {
-          methodName: method,
-          args: new TextEncoder().encode(JSON.stringify(args)),
-          gas,
-          deposit,
-        },
-      },
-    ],
+    actions: [action as typeof action & { type: 'FunctionCall' }],
   });
   return outcome;
 }
@@ -391,7 +402,20 @@ function mapJob(raw: RawJob): AIJob {
       : undefined,
     result: raw.result ? JSON.parse(raw.result) : undefined,
     error: raw.error ?? undefined,
-    attestation: raw.attestation ? JSON.parse(raw.attestation) : undefined,
+    attestation: raw.attestation
+      ? (() => {
+          try {
+            return JSON.parse(atob(raw.attestation)) as NEARAIAttestation;
+          } catch {
+            // Not base64-encoded JSON — try raw JSON
+            try {
+              return JSON.parse(raw.attestation) as NEARAIAttestation;
+            } catch {
+              return undefined;
+            }
+          }
+        })()
+      : undefined,
     createdAt: nsToISO(raw.created_at),
     updatedAt: nsToISO(raw.updated_at),
     completedAt: raw.completed_at ? nsToISO(raw.completed_at) : undefined,

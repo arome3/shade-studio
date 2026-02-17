@@ -161,10 +161,16 @@ export interface AccountInfo {
 // Action Types (Wallet Selector compatible)
 // ============================================================================
 
-/** Wallet action types matching NEAR Wallet Selector format */
+/**
+ * Wallet action types matching NEAR Wallet Selector format.
+ *
+ * Each action includes both the v8 format (type + params) and optional
+ * NAJ-format properties (createAccount, transfer, addKey, etc.) so that
+ * both wallet-selector v8 and v10 (Meteor) can process them.
+ */
 export type WalletAction =
-  | { type: 'CreateAccount' }
-  | { type: 'Transfer'; params: { deposit: string } }
+  | { type: 'CreateAccount'; createAccount?: Record<string, never> }
+  | { type: 'Transfer'; params: { deposit: string }; transfer?: { deposit: string } }
   | {
       type: 'AddKey';
       params: {
@@ -179,8 +185,24 @@ export type WalletAction =
               };
             };
       };
+      addKey?: {
+        publicKey: string;
+        accessKey: {
+          nonce: number;
+          permission:
+            | 'FullAccess'
+            | { fullAccess: Record<string, never> }
+            | {
+                functionCall: {
+                  receiverId: string;
+                  methodNames: string[];
+                  allowance: string;
+                };
+              };
+        };
+      };
     }
-  | { type: 'DeleteKey'; params: { publicKey: string } };
+  | { type: 'DeleteKey'; params: { publicKey: string }; deleteKey?: { publicKey: string } };
 
 // ============================================================================
 // Input / Output Types
