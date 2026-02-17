@@ -21,7 +21,6 @@ const MAX_POSEIDON_INPUTS = 16;
 const MAX_STRING_BYTES = MAX_BYTES_PER_FIELD * MAX_POSEIDON_INPUTS;
 
 // circomlibjs poseidon accepts an array of bigint-like values
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PoseidonFn = (inputs: any[]) => Uint8Array;
 
 interface PoseidonHasher {

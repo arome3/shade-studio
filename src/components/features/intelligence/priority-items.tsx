@@ -283,7 +283,7 @@ export function PriorityItems({
       <div className={cn('text-center py-8 text-text-muted', className)}>
         <Circle className="h-8 w-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No priority items for today</p>
-        <p className="text-xs mt-1">You're all caught up!</p>
+        <p className="text-xs mt-1">You&apos;re all caught up!</p>
       </div>
     );
   }

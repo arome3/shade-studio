@@ -112,7 +112,6 @@ import { getWalletSelector } from '@/lib/near/wallet';
 import type { AIJob } from '@/types/async-ai';
 
 // Access the shared mock state via the store module
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockStoreActions = (await import('@/stores/async-ai-store') as any).__storeActions;
 
 // ---------------------------------------------------------------------------

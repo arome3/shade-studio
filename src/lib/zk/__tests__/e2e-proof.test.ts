@@ -36,9 +36,7 @@ const MAX_DAYS = 365;
 const MERKLE_DEPTH = 20;
 
 describe.skipIf(!HAS_ARTIFACTS)('E2E: verified-builder', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let snarkjs: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let vkey: any;
   let wasmBuffer: Buffer;
   let zkeyBuffer: Buffer;

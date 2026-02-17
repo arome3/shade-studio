@@ -16,14 +16,14 @@ describe('useIPFS', () => {
 
     it('should export IPFSState interface type', async () => {
       // Type-only export, we just verify the module loads
-      const module = await import('../use-ipfs');
-      expect(module).toBeDefined();
+      const mod = await import('../use-ipfs');
+      expect(mod).toBeDefined();
     });
 
     it('should export UseIPFSReturn interface type', async () => {
       // Type-only export, we just verify the module loads
-      const module = await import('../use-ipfs');
-      expect(module).toBeDefined();
+      const mod = await import('../use-ipfs');
+      expect(mod).toBeDefined();
     });
   });
 
