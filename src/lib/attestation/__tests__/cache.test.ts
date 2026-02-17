@@ -138,6 +138,13 @@ describe('VerificationCache', () => {
   });
 
   describe('LRU eviction', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('should evict oldest entries when at capacity', () => {
       // Fill the cache
       for (let i = 0; i < 10; i++) {
